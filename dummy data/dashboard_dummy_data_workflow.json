@@ -1,0 +1,342 @@
+{
+  "name": "Dashboard Dummy Data Generator",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -200,
+        320
+      ],
+      "id": "trigger-001",
+      "name": "Run Once"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Generate monthly sales - Highcharts ready\n// Series names match Salesforce CustomerChannel__c values\nconst monthlySales = {\n  categories: ['2024-01','2024-02','2024-03','2024-04','2024-05','2024-06','2024-07','2024-08','2024-09','2024-10','2024-11','2024-12','2025-01','2025-02','2025-03','2025-04','2025-05','2025-06','2025-07','2025-08','2025-09','2025-10','2025-11','2025-12'],\n  series: [\n    { name: 'Direct Sales', data: [48200,52800,44600,56100,51400,59800,63500,58200,67100,71800,65400,78200,82100,75400,88600,93800,89500,99200,105800,100500,110200,116800,111400,123200] },\n    { name: 'Channel Partner', data: [21400,24100,19800,26500,23900,28600,30200,27800,32400,35100,31600,38400,40800,37200,44100,46500,43800,50200,53600,50100,55200,58400,55800,62400] }\n  ],\n  updatedAt: new Date().toISOString()\n};\n\n// Generate yearly sales - Highcharts ready\n// Series names match Salesforce Order_Type__c values (lowercase)\nconst yearlySales = {\n  categories: ['2022','2023','2024','2025'],\n  series: [\n    { name: 'new', data: [312400,385600,468200,552800] },\n    { name: 'renewal', data: [198600,256800,324400,398200] },\n    { name: 'upgrade', data: [42800,68200,95400,128600] },\n    { name: 'downgrade', data: [8200,12400,18600,24200] }\n  ],\n  updatedAt: new Date().toISOString()\n};\n\n// Generate revenue streams - Highcharts pie/donut ready\n// All values match Salesforce field values exactly\nconst revenueStreams = {\n  byCustomerChannel: [\n    { name: 'Direct Sales', y: 682400 },\n    { name: 'Channel Partner', y: 421800 }\n  ],\n  bySalesChannel: [\n    { name: 'Assisted', y: 756200 },\n    { name: 'Self-service', y: 348000 }\n  ],\n  byOrderType: [\n    { name: 'new', y: 552800 },\n    { name: 'renewal', y: 398200 },\n    { name: 'upgrade', y: 128600 },\n    { name: 'downgrade', y: 24200 }\n  ],\n  bySubscriptionStatus: [\n    { name: 'active', y: 812400 },\n    { name: 'cancelled', y: 98600 },\n    { name: 'expired', y: 72200 },\n    { name: 'pending-cancel', y: 45800 },\n    { name: 'pending', y: 38200 },\n    { name: 'on-hold', y: 12600 }\n  ],\n  byLicenseType: [\n    { name: 'SaaS', y: 412600 },\n    { name: 'Internal', y: 298400 },\n    { name: 'Web', y: 245800 },\n    { name: 'OEM License', y: 112400 },\n    { name: 'Custom', y: 34600 }\n  ],\n  byValueSegment: [\n    { name: '1. Low', y: 186400 },\n    { name: '2. Medium', y: 348200 },\n    { name: '3. High', y: 384600 },\n    { name: '4. Enterprise', y: 185000 }\n  ],\n  totalRecords: 2847,\n  totalRevenue: 1103800,\n  updatedAt: new Date().toISOString()\n};\n\n// Generate overview KPIs\nconst overviewKpis = {\n  totalRevenue: 1103800,\n  totalOrders: 2847,\n  currentYearRevenue: 552800,\n  lastYearRevenue: 468200,\n  yoyGrowth: 18.07,\n  currentMonthRevenue: 123200,\n  previousMonthRevenue: 111400,\n  momGrowth: 10.59,\n  avgOrderValue: 387.72,\n  activeSubscriptions: 1842,\n  churnRiskCount: 127,\n  renewalRate: 78.4,\n  directVsPartnerRatio: 61.8,\n  assistedVsSelfServiceRatio: 68.5,\n  updatedAt: new Date().toISOString()\n};\n\nreturn [\n  { json: { fileName: 'monthly_sales', payload: monthlySales } },\n  { json: { fileName: 'yearly_sales', payload: yearlySales } },\n  { json: { fileName: 'revenue_streams', payload: revenueStreams } },\n  { json: { fileName: 'overview_kpis', payload: overviewKpis } }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        40,
+        320
+      ],
+      "id": "code-001",
+      "name": "Generate Dummy Data"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{ $json.fileName }}",
+              "rightValue": "monthly_sales",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        300,
+        100
+      ],
+      "id": "if-monthly",
+      "name": "Is Monthly?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "2",
+              "leftValue": "={{ $json.fileName }}",
+              "rightValue": "yearly_sales",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        300,
+        300
+      ],
+      "id": "if-yearly",
+      "name": "Is Yearly?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "3",
+              "leftValue": "={{ $json.fileName }}",
+              "rightValue": "revenue_streams",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        300,
+        500
+      ],
+      "id": "if-streams",
+      "name": "Is Revenue Streams?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "4",
+              "leftValue": "={{ $json.fileName }}",
+              "rightValue": "overview_kpis",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        300,
+        700
+      ],
+      "id": "if-overview",
+      "name": "Is Overview?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "monthly_sales",
+              "value": "={{ JSON.stringify($json.payload, null, 2) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        100
+      ],
+      "id": "out-monthly",
+      "name": "\ud83d\udcca monthly_sales.json"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "yearly_sales",
+              "value": "={{ JSON.stringify($json.payload, null, 2) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        300
+      ],
+      "id": "out-yearly",
+      "name": "\ud83d\udcca yearly_sales.json"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "revenue_streams",
+              "value": "={{ JSON.stringify($json.payload, null, 2) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        500
+      ],
+      "id": "out-streams",
+      "name": "\ud83d\udcca revenue_streams.json"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "overview_kpis",
+              "value": "={{ JSON.stringify($json.payload, null, 2) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        700
+      ],
+      "id": "out-overview",
+      "name": "\ud83d\udcca overview_kpis.json"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Run Once": {
+      "main": [
+        [
+          {
+            "node": "Generate Dummy Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Dummy Data": {
+      "main": [
+        [
+          {
+            "node": "Is Monthly?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Is Yearly?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Is Revenue Streams?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Is Overview?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Monthly?": {
+      "main": [
+        [
+          {
+            "node": "\ud83d\udcca monthly_sales.json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Yearly?": {
+      "main": [
+        [
+          {
+            "node": "\ud83d\udcca yearly_sales.json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Revenue Streams?": {
+      "main": [
+        [
+          {
+            "node": "\ud83d\udcca revenue_streams.json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Overview?": {
+      "main": [
+        [
+          {
+            "node": "\ud83d\udcca overview_kpis.json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

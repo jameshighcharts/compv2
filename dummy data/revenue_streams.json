@@ -1,0 +1,40 @@
+{
+  "byCustomerChannel": [
+    { "name": "Direct Sales", "y": 682400 },
+    { "name": "Channel Partner", "y": 421800 }
+  ],
+  "bySalesChannel": [
+    { "name": "Assisted", "y": 756200 },
+    { "name": "Self-service", "y": 348000 }
+  ],
+  "byOrderType": [
+    { "name": "new", "y": 552800 },
+    { "name": "renewal", "y": 398200 },
+    { "name": "upgrade", "y": 128600 },
+    { "name": "downgrade", "y": 24200 }
+  ],
+  "bySubscriptionStatus": [
+    { "name": "active", "y": 812400 },
+    { "name": "cancelled", "y": 98600 },
+    { "name": "expired", "y": 72200 },
+    { "name": "pending-cancel", "y": 45800 },
+    { "name": "pending", "y": 38200 },
+    { "name": "on-hold", "y": 12600 }
+  ],
+  "byLicenseType": [
+    { "name": "SaaS", "y": 412600 },
+    { "name": "Internal", "y": 298400 },
+    { "name": "Web", "y": 245800 },
+    { "name": "OEM License", "y": 112400 },
+    { "name": "Custom", "y": 34600 }
+  ],
+  "byValueSegment": [
+    { "name": "1. Low", "y": 186400 },
+    { "name": "2. Medium", "y": 348200 },
+    { "name": "3. High", "y": 384600 },
+    { "name": "4. Enterprise", "y": 185000 }
+  ],
+  "totalRecords": 2847,
+  "totalRevenue": 1103800,
+  "updatedAt": "2026-02-14T12:00:00.000Z"
+}

@@ -1,0 +1,17 @@
+{
+  "totalRevenue": 1103800,
+  "totalOrders": 2847,
+  "currentYearRevenue": 552800,
+  "lastYearRevenue": 468200,
+  "yoyGrowth": 18.07,
+  "currentMonthRevenue": 123200,
+  "previousMonthRevenue": 111400,
+  "momGrowth": 10.59,
+  "avgOrderValue": 387.72,
+  "activeSubscriptions": 1842,
+  "churnRiskCount": 127,
+  "renewalRate": 78.4,
+  "directVsPartnerRatio": 61.8,
+  "assistedVsSelfServiceRatio": 68.5,
+  "updatedAt": "2026-02-14T12:00:00.000Z"
+}
