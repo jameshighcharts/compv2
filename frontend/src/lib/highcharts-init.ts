@@ -1,4 +1,4 @@
-import Highcharts from "highcharts";
+import Highcharts from "highcharts/esm/highcharts.src.js";
 
 const HIGHCHARTS_MORE_FLAG = "__highcharts_more_initialized__";
 
@@ -11,32 +11,7 @@ export const ensureHighchartsModules = async (): Promise<void> => {
     return;
   }
 
-  const highchartsMore = await import("highcharts/highcharts-more");
-  const highchartsMoreRecord = highchartsMore as Record<string, unknown>;
-  const defaultExport =
-    highchartsMoreRecord.default && typeof highchartsMoreRecord.default === "object"
-      ? (highchartsMoreRecord.default as Record<string, unknown>).default
-      : highchartsMoreRecord.default;
-
-  const candidateInitializers: unknown[] = [
-    highchartsMoreRecord,
-    highchartsMoreRecord.default,
-    defaultExport,
-    highchartsMoreRecord.HighchartsMore,
-  ];
-
-  const initHighchartsMore = candidateInitializers.find(
-    (candidate): candidate is (library: typeof Highcharts) => void =>
-      typeof candidate === "function",
-  );
-
-  if (!initHighchartsMore) {
-    console.error("Unable to initialize highcharts-more module.");
-    globalWithFlag[HIGHCHARTS_MORE_FLAG] = true;
-    return;
-  }
-
-  initHighchartsMore(Highcharts);
+  await import("highcharts/esm/highcharts-more.src.js");
   globalWithFlag[HIGHCHARTS_MORE_FLAG] = true;
 };
 

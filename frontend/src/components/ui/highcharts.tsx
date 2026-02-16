@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import HighchartsReact from "highcharts-react-official";
+import { Chart as HighchartsReact } from "@highcharts/react";
 
 import Highcharts, { ensureHighchartsModules } from "@/lib/highcharts-init";
 import { cn } from "@/lib/utils";
