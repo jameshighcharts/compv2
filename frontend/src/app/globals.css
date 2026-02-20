@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "@highcharts/grid-pro/css/grid-pro.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -23,11 +24,11 @@
   --border: #e2e8f0;
   --input: #e2e8f0;
   --ring: #020817;
-  --chart-1: #e76e50;
-  --chart-2: #2a9d90;
-  --chart-3: #274754;
-  --chart-4: #e8c468;
-  --chart-5: #f4a462;
+  --chart-1: #8087E8;
+  --chart-2: #A3EDBA;
+  --chart-3: #F19E53;
+  --chart-4: #6699A1;
+  --chart-5: #E1D369;
   --radius: 0.6rem;
   --sidebar-background: var(--background);
   --sidebar-foreground: var(--foreground);
@@ -56,11 +57,11 @@
   --border: #1e293b;
   --input: #1e293b;
   --ring: #cbd5e1;
-  --chart-1: #2662d9;
-  --chart-2: #2eb88a;
-  --chart-3: #e88c30;
-  --chart-4: #af57db;
-  --chart-5: #e23670;
+  --chart-1: #8087E8;
+  --chart-2: #A3EDBA;
+  --chart-3: #F19E53;
+  --chart-4: #6699A1;
+  --chart-5: #E1D369;
 }
 
 @theme inline {
@@ -113,4 +114,118 @@
     @apply bg-background text-foreground antialiased;
     font-family: "Inter", "Inter Fallback", system-ui, sans-serif;
   }
+}
+
+.ra-activity-grid .hcg-container {
+  --hcg-border-width: 0;
+  --hcg-padding: 0;
+  --hcg-header-vertical-padding: 10px;
+  --hcg-header-horizontal-padding: 22px;
+  --hcg-vertical-padding: 14px;
+  --hcg-horizontal-padding: 22px;
+  --hcg-font-size: 16px;
+  --hcg-header-font-size: 14px;
+  --hcg-header-font-weight: 500;
+  --hcg-row-border-color: var(--border);
+  --hcg-header-row-border-color: var(--border);
+  --hcg-row-even-background: transparent;
+  --hcg-row-hover-background: color-mix(in srgb, var(--accent) 55%, transparent);
+  --hcg-header-color: var(--muted-foreground);
+  --hcg-color: var(--foreground);
+  --hcg-background: transparent;
+}
+
+.ra-activity-grid .hcg-table th,
+.ra-activity-grid .hcg-table td {
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.ra-activity-grid .ra-grid-cell {
+  color: var(--foreground);
+}
+
+.ra-activity-grid .ra-user-cell {
+  white-space: normal;
+  line-height: 1.2;
+}
+
+.ra-activity-grid .ra-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ra-activity-grid .ra-user-avatar {
+  display: inline-flex;
+  height: 36px;
+  width: 36px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--muted) 85%, transparent);
+  color: var(--muted-foreground);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.ra-activity-grid .ra-user-copy {
+  display: inline-flex;
+  flex-direction: column;
+}
+
+.ra-activity-grid .ra-user-name {
+  line-height: 1.1;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.ra-activity-grid .ra-user-email {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.ra-activity-grid .ra-meta-cell {
+  color: var(--muted-foreground);
+}
+
+.ra-activity-grid .ra-amount-cell {
+  text-align: right;
+  font-weight: 600;
+}
+
+.ra-activity-grid .ra-status-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  padding: 3px 10px;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.ra-activity-grid .ra-status-invited {
+  border-color: color-mix(in srgb, var(--foreground) 16%, transparent);
+  color: var(--foreground);
+}
+
+.ra-activity-grid .ra-status-suspended {
+  border-color: color-mix(in srgb, #f97316 32%, transparent);
+  background-color: color-mix(in srgb, #f97316 12%, transparent);
+  color: #ea580c;
+}
+
+.ra-activity-grid .ra-status-new {
+  border-color: color-mix(in srgb, #10b981 30%, transparent);
+  background-color: color-mix(in srgb, #10b981 12%, transparent);
+  color: #059669;
+}
+
+.ra-activity-grid .ra-status-delete {
+  border-color: color-mix(in srgb, #ef4444 30%, transparent);
+  background-color: color-mix(in srgb, #ef4444 12%, transparent);
+  color: #ef4444;
 }

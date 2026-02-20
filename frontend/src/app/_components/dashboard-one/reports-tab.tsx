@@ -1,0 +1,49 @@
+"use client";
+
+import { IconFileDescription } from "@tabler/icons-react";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+import { reportFiles } from "./data";
+
+export function DashboardReportsTab() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Reports Library</CardTitle>
+        <CardDescription>Download your latest monthly reports.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Report</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Period</TableHead>
+                <TableHead className="text-right">Download</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {reportFiles.map((report) => (
+                <TableRow key={report.id}>
+                  <TableCell className="font-medium">{report.name}</TableCell>
+                  <TableCell>{report.type}</TableCell>
+                  <TableCell>{report.period}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="outline" size="sm">
+                      <IconFileDescription className="mr-2 size-4" />
+                      Download
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

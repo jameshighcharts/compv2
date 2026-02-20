@@ -2,7 +2,6 @@ import type { Metadata } from "next"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AppSidebar } from "@/components/app-sidebar"
-import { Header } from "@/components/header"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { TooltipProvider } from "@/components/ui/tooltip"
 
@@ -29,8 +28,7 @@ export default function RootLayout({
             <SidebarProvider>
               <AppSidebar />
               <SidebarInset>
-                <Header />
-                <main className="flex-1 p-4">{children}</main>
+                <main className="flex-1 px-4 pb-4 pt-2">{children}</main>
               </SidebarInset>
             </SidebarProvider>
           </TooltipProvider>

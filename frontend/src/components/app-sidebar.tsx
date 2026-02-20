@@ -1,195 +1,91 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
+import { useTheme } from "next-themes"
 import {
-  IconLayoutDashboard,
-  IconChecklist,
-  IconUsers,
-  IconLockAccess,
-  IconBug,
-  IconSettings,
-  IconCode,
-  IconChevronRight,
+  IconMoon,
+  IconSearch,
+  IconSun,
 } from "@tabler/icons-react"
-import { ChevronsUpDown, AudioWaveform } from "lucide-react"
+import { ChevronsUpDown } from "lucide-react"
 
+import { Button } from "@/components/ui/button"
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarRail,
+  SidebarTrigger,
 } from "@/components/ui/sidebar"
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
-const navGeneral = [
-  {
-    title: "Dashboard",
-    icon: IconLayoutDashboard,
-    subItems: [
-      { title: "Dashboard 1", href: "/" },
-      { title: "Dashboard 2", href: "/dashboard-2" },
-      { title: "Dashboard 3", href: "/dashboard-3" },
-    ],
-  },
-  {
-    title: "Tasks",
-    href: "/tasks",
-    icon: IconChecklist,
-  },
-  {
-    title: "Users",
-    href: "/users",
-    icon: IconUsers,
-  },
-]
-
-const navPages = [
-  { title: "Auth", icon: IconLockAccess },
-  { title: "Errors", icon: IconBug },
-]
-
-const navOther = [
-  { title: "Settings", icon: IconSettings },
-  { title: "Developers", icon: IconCode },
-]
+import { SidebarNavGroup } from "@/components/sidebar/nav-group"
+import { navGeneral, navOther, navPages } from "@/components/sidebar/nav-data"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
+  const { theme, setTheme } = useTheme()
 
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader className="flex flex-col gap-2 p-2">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-            >
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <AudioWaveform className="size-4" />
-              </div>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">Acme Corp.</span>
-                <span className="truncate text-xs">Startup</span>
-              </div>
-              <ChevronsUpDown className="ml-auto size-4" />
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <div className="flex items-center gap-1.5">
+          <SidebarTrigger className="size-8 shrink-0 rounded-md border border-sidebar-border/60" />
+          <SidebarMenu className="min-w-0 flex-1">
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                size="lg"
+                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              >
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                  <Image
+                    src="/highcharts.svg"
+                    alt="Highcharts"
+                    width={16}
+                    height={16}
+                    className="size-4"
+                  />
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">HC Compass</span>
+                </div>
+                <ChevronsUpDown className="ml-auto size-4" />
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </div>
+
+        <div className="flex items-center gap-2 px-1 pb-1 group-data-[collapsible=icon]:hidden">
+          <Button
+            variant="outline"
+            className="h-8 flex-1 justify-start gap-2 rounded-md px-2 text-xs text-muted-foreground"
+          >
+            <IconSearch className="size-3.5" />
+            <span>Search</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          >
+            <IconSun className="size-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            <IconMoon className="absolute size-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            <span className="sr-only">Toggle theme</span>
+          </Button>
+        </div>
       </SidebarHeader>
 
       <SidebarContent>
-        {/* General */}
-        <SidebarGroup>
-          <SidebarGroupLabel>General</SidebarGroupLabel>
-          <SidebarMenu>
-            {navGeneral.map((item) =>
-              item.subItems ? (
-                <Collapsible
-                  key={item.title}
-                  asChild
-                  defaultOpen
-                  className="group/collapsible"
-                >
-                  <SidebarMenuItem>
-                    <CollapsibleTrigger asChild>
-                      <SidebarMenuButton tooltip={item.title}>
-                        <item.icon className="size-4" />
-                        <span>{item.title}</span>
-                        <IconChevronRight className="ml-auto size-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                      </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <SidebarMenuSub>
-                        {item.subItems.map((sub) => (
-                          <SidebarMenuSubItem key={sub.href}>
-                            <SidebarMenuSubButton
-                              asChild
-                              isActive={pathname === sub.href}
-                            >
-                              <Link href={sub.href}>
-                                <span>{sub.title}</span>
-                              </Link>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        ))}
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
-                  </SidebarMenuItem>
-                </Collapsible>
-              ) : (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    tooltip={item.title}
-                    isActive={pathname === item.href}
-                  >
-                    <Link href={item.href!}>
-                      <item.icon className="size-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )
-            )}
-          </SidebarMenu>
-        </SidebarGroup>
-
-        {/* Pages */}
-        <SidebarGroup>
-          <SidebarGroupLabel>Pages</SidebarGroupLabel>
-          <SidebarMenu>
-            {navPages.map((item) => (
-              <Collapsible key={item.title} asChild className="group/collapsible">
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton tooltip={item.title}>
-                      <item.icon className="size-4" />
-                      <span>{item.title}</span>
-                      <IconChevronRight className="ml-auto size-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                </SidebarMenuItem>
-              </Collapsible>
-            ))}
-          </SidebarMenu>
-        </SidebarGroup>
-
-        {/* Other */}
-        <SidebarGroup>
-          <SidebarGroupLabel>Other</SidebarGroupLabel>
-          <SidebarMenu>
-            {navOther.map((item) => (
-              <Collapsible key={item.title} asChild className="group/collapsible">
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton tooltip={item.title}>
-                      <item.icon className="size-4" />
-                      <span>{item.title}</span>
-                      <IconChevronRight className="ml-auto size-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                </SidebarMenuItem>
-              </Collapsible>
-            ))}
-          </SidebarMenu>
-        </SidebarGroup>
+        <SidebarNavGroup label="General" items={navGeneral} pathname={pathname} />
+        <SidebarNavGroup label="Pages" items={navPages} pathname={pathname} />
+        <SidebarNavGroup label="Other" items={navOther} pathname={pathname} />
       </SidebarContent>
 
       <SidebarFooter className="flex flex-col gap-2 p-2">
@@ -200,12 +96,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src="/avatars/user.png" alt="ausrobdev" />
-                <AvatarFallback className="rounded-lg">AR</AvatarFallback>
+                <AvatarImage src="/avatars/user.png" alt="James" />
+                <AvatarFallback className="rounded-lg">J</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">ausrobdev</span>
-                <span className="truncate text-xs">rob@shadcnblocks.com</span>
+                <span className="truncate font-semibold">James</span>
+                <span className="truncate text-xs">james@hs.com</span>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>

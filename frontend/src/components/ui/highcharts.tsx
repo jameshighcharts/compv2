@@ -11,6 +11,19 @@ export type DashboardHighchartProps = {
   options: Highcharts.Options;
 };
 
+export const CHART_PALETTE = [
+  "#8087E8",
+  "#A3EDBA",
+  "#F19E53",
+  "#6699A1",
+  "#E1D369",
+] as const;
+
+export const chartColor = (index: number): string => {
+  const safeIndex = ((index % CHART_PALETTE.length) + CHART_PALETTE.length) % CHART_PALETTE.length;
+  return CHART_PALETTE[safeIndex];
+};
+
 const BASE_OPTIONS: Highcharts.Options = {
   chart: {
     backgroundColor: "transparent",
@@ -18,6 +31,7 @@ const BASE_OPTIONS: Highcharts.Options = {
       fontFamily: "inherit",
     },
   },
+  colors: [...CHART_PALETTE],
   title: {
     text: undefined,
   },
