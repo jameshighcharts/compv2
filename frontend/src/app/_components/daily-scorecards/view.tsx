@@ -1053,8 +1053,8 @@ export function DailyScorecardsView() {
       <Card className="sc-summary-card gap-0 py-0">
         <CardContent className="px-0 pb-6 pt-6">
           <div className="px-5">
-            <h2 className="text-[34px] font-semibold tracking-[-0.02em] text-[#1f2937]">10. Full Summary Table</h2>
-            <p className="mt-2 text-[18px] italic text-[#8fa0b7]">
+            <h2 className="text-[34px] font-semibold tracking-[-0.02em] text-foreground">10. Full Summary Table</h2>
+            <p className="mt-2 text-[18px] italic text-muted-foreground">
               Full summary with colour-coded YoY badges and visual order/revenue bars
             </p>
           </div>
