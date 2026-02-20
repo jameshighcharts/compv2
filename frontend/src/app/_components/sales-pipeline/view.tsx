@@ -25,7 +25,6 @@ import {
   MAX_DEAL_SIZE,
   pipelineDeals,
   salesPipelineKpis,
-  STAGE_MONTHLY_ADDS,
   wonDeals,
 } from "./data";
 import { ArrKpiCard } from "../dashboard-one/cards";
@@ -202,7 +201,13 @@ function buildPipelineGridOptions() {
 
 // ─── Funnel bubble chart ──────────────────────────────────────────────────────
 
-const STAGE_NAMES = ["Scoping", "Proposal", "Committed", "Won"];
+const STAGE_NAMES = ["Scoping", "Proposal", "Committed", "Won"] as const;
+
+function formatCompactCurrency(n: number): string {
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `$${Math.round(n / 1_000)}K`;
+  return `$${Math.round(n)}`;
+}
 
 // Linear interpolation of the funnel y-boundary at a given x.
 // Left edge (x=-0.5): y_bound=4.5 · Right edge (x=3.5): y_bound=1.5
@@ -458,27 +463,67 @@ export function SalesPipelineView() {
   const wonGridOptions      = React.useMemo(() => buildWonGridOptions(),      []);
   const pipelineGridOptions = React.useMemo(() => buildPipelineGridOptions(), []);
 
+  const activeDim = React.useMemo(() => FILTER_DIMS.find((d) => d.key === filterDim)!, [filterDim]);
+  const minFilterValue = filterValues[filterDim];
+
+  const filteredBubblePoints = React.useMemo(
+    () =>
+      minFilterValue > 0
+        ? allBubblePoints.filter((p) => activeDim.extract(p.name, p.z) >= minFilterValue)
+        : allBubblePoints,
+    [activeDim, minFilterValue],
+  );
+
+  const filteredDeals = React.useMemo(
+    () =>
+      minFilterValue > 0
+        ? allDeals.filter((d) => activeDim.extract(d.company, d.dealSize) >= minFilterValue)
+        : allDeals,
+    [activeDim, minFilterValue],
+  );
+
   const filteredFunnelSeries = React.useMemo(() => {
-    const dim    = FILTER_DIMS.find((d) => d.key === filterDim)!;
-    const minVal = filterValues[filterDim];
-    const pts    = minVal > 0
-      ? allBubblePoints.filter((p) => dim.extract(p.name, p.z) >= minVal)
-      : allBubblePoints;
-    return (["Scoping", "Proposal", "Committed", "Won"] as const).map((stage) => ({
+    return STAGE_NAMES.map((stage) => ({
       name: stage,
       color: FUNNEL_STAGE_COLORS[stage],
-      data: pts.filter((p) => p.stage === stage),
+      data: filteredBubblePoints.filter((p) => p.stage === stage),
     }));
-  }, [filterDim, filterValues]);
+  }, [filteredBubblePoints]);
 
-  const { visibleCount, activeDim } = React.useMemo(() => {
-    const dim    = FILTER_DIMS.find((d) => d.key === filterDim)!;
-    const minVal = filterValues[filterDim];
-    const count  = minVal > 0
-      ? allBubblePoints.filter((p) => dim.extract(p.name, p.z) >= minVal).length
-      : allBubblePoints.length;
-    return { visibleCount: count, activeDim: dim };
-  }, [filterDim, filterValues]);
+  const visibleCount = filteredBubblePoints.length;
+
+  const stageFilterKpis = React.useMemo(() => {
+    const fullStageStats = STAGE_NAMES.reduce<Record<(typeof STAGE_NAMES)[number], { count: number; value: number }>>(
+      (acc, stage) => {
+        const stageDeals = allDeals.filter((d) => d.stage === stage);
+        acc[stage] = {
+          count: stageDeals.length,
+          value: stageDeals.reduce((sum, d) => sum + d.dealSize, 0),
+        };
+        return acc;
+      },
+      {
+        Scoping: { count: 0, value: 0 },
+        Proposal: { count: 0, value: 0 },
+        Committed: { count: 0, value: 0 },
+        Won: { count: 0, value: 0 },
+      },
+    );
+
+    return STAGE_NAMES.map((stage) => {
+      const stageDeals = filteredDeals.filter((d) => d.stage === stage);
+      const filteredValue = stageDeals.reduce((sum, d) => sum + d.dealSize, 0);
+      const baselineCount = fullStageStats[stage].count;
+      const deltaPct = baselineCount > 0 ? ((stageDeals.length - baselineCount) / baselineCount) * 100 : 0;
+
+      return {
+        stage,
+        dealsAdded: stageDeals.length,
+        valueAdded: formatCompactCurrency(filteredValue),
+        deltaPct,
+      };
+    });
+  }, [filteredDeals]);
 
   const handleBubbleClick = React.useCallback((pt: SelectedPoint) => setSelectedPoint(pt), []);
 
@@ -564,12 +609,12 @@ export function SalesPipelineView() {
           />
         </CardContent>
 
-        {/* ── Per-stage "added this month" KPIs ─────────────────────────── */}
+        {/* ── Per-stage KPIs (respect slider filter) ─────────────────────── */}
         <div className="grid grid-cols-2 border-t border-border sm:grid-cols-4">
-          {STAGE_MONTHLY_ADDS.map((s, i) => (
+          {stageFilterKpis.map((s, i) => (
             <div
               key={s.stage}
-              className={`flex flex-col gap-2 p-5 ${i < STAGE_MONTHLY_ADDS.length - 1 ? "border-r border-border" : ""}`}
+              className={`flex flex-col gap-2 p-5 ${i < stageFilterKpis.length - 1 ? "border-r border-border" : ""}`}
             >
               {/* Stage label with colour dot */}
               <div className="flex items-center gap-2">
@@ -593,9 +638,13 @@ export function SalesPipelineView() {
                 {s.valueAdded}
               </div>
 
-              {/* Delta vs last month */}
-              <p className={`text-xs font-medium ${s.positive ? "text-emerald-500" : "text-red-500"}`}>
-                {s.valueDelta} vs last month
+              {/* Delta vs full unfiltered stage count */}
+              <p
+                className={`text-xs font-medium ${
+                  s.deltaPct > 0 ? "text-emerald-500" : s.deltaPct < 0 ? "text-red-500" : "text-muted-foreground"
+                }`}
+              >
+                {`${s.deltaPct > 0 ? "+" : ""}${Math.round(s.deltaPct)}%`} vs all deals
               </p>
             </div>
           ))}
