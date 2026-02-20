@@ -2,12 +2,14 @@
 
 import * as React from "react";
 
+import Highcharts from "@/lib/highcharts-init";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardHighchart, createBaseChartOptions } from "@/components/ui/highcharts";
 import { HighchartsGridPro } from "@/components/ui/highcharts-grid-pro";
 import { Slider } from "@/components/ui/slider";
 
-import { allBubblePoints, allDeals, BubblePoint, COMPANY_INFO, FUNNEL_STAGE_COLORS, MAX_DEAL_SIZE, pipelineDeals, salesPipelineKpis, wonDeals } from "./data";
+import { allBubblePoints, allDeals, BubblePoint, COMPANY_INFO, FILTER_RANGES, FUNNEL_STAGE_COLORS, MAX_DEAL_SIZE, pipelineDeals, salesPipelineKpis, wonDeals } from "./data";
 import { ArrKpiCard } from "../dashboard-one/cards";
 
 // ─── Grid options ─────────────────────────────────────────────────────────────
@@ -191,6 +193,57 @@ function funnelBoundAtX(dataX: number): number {
   return 4.5 - 3.0 * t;
 }
 
+// ─── Filter dimensions ────────────────────────────────────────────────────────
+
+type FilterDimKey = "dealSize" | "companyArr" | "employees" | "age";
+
+const FILTER_DIMS: Array<{
+  key: FilterDimKey;
+  label: string;
+  min: number;
+  max: number;
+  step: number;
+  format: (v: number) => string;
+  extract: (name: string, z: number) => number;
+}> = [
+  {
+    key:     "dealSize",
+    label:   "Deal Size",
+    min:     0,
+    max:     MAX_DEAL_SIZE,
+    step:    10000,
+    format:  (v) => v === 0 ? "All" : `≥ $${Math.round(v / 1000)}K`,
+    extract: (_name, z) => z,
+  },
+  {
+    key:     "companyArr",
+    label:   "Co. ARR",
+    min:     0,
+    max:     FILTER_RANGES.maxAnnualRevenue,
+    step:    5000,
+    format:  (v) => v === 0 ? "All" : `≥ $${(v / 1000).toFixed(0)}M`,
+    extract: (name) => COMPANY_INFO[name]?.annualRevenue ?? 0,
+  },
+  {
+    key:     "employees",
+    label:   "Headcount",
+    min:     0,
+    max:     FILTER_RANGES.maxEmployeeCount,
+    step:    50,
+    format:  (v) => v === 0 ? "All" : `≥ ${v.toLocaleString()}`,
+    extract: (name) => COMPANY_INFO[name]?.employeeCount ?? 0,
+  },
+  {
+    key:     "age",
+    label:   "Age",
+    min:     0,
+    max:     FILTER_RANGES.maxYearsInBiz,
+    step:    1,
+    format:  (v) => v === 0 ? "All" : `≥ ${v} yr${v !== 1 ? "s" : ""}`,
+    extract: (name) => COMPANY_INFO[name] ? 2026 - COMPANY_INFO[name].foundedYear : 0,
+  },
+];
+
 type SelectedPoint = { name: string; stage: string; probability: number; z: number };
 
 function buildFunnelChartOptions(
@@ -372,22 +425,34 @@ function buildFunnelChartOptions(
 // ─── View ─────────────────────────────────────────────────────────────────────
 
 export function SalesPipelineView() {
-  const [minDealSize, setMinDealSize]     = React.useState(0);
+  const [filterDim, setFilterDim]         = React.useState<FilterDimKey>("dealSize");
+  const [filterValues, setFilterValues]   = React.useState<Record<FilterDimKey, number>>({ dealSize: 0, companyArr: 0, employees: 0, age: 0 });
   const [selectedPoint, setSelectedPoint] = React.useState<SelectedPoint | null>(null);
 
   const wonGridOptions      = React.useMemo(() => buildWonGridOptions(),      []);
   const pipelineGridOptions = React.useMemo(() => buildPipelineGridOptions(), []);
 
   const filteredFunnelSeries = React.useMemo(() => {
-    const pts = minDealSize > 0 ? allBubblePoints.filter((p) => p.z >= minDealSize) : allBubblePoints;
+    const dim    = FILTER_DIMS.find((d) => d.key === filterDim)!;
+    const minVal = filterValues[filterDim];
+    const pts    = minVal > 0
+      ? allBubblePoints.filter((p) => dim.extract(p.name, p.z) >= minVal)
+      : allBubblePoints;
     return (["Scoping", "Proposal", "Committed", "Won"] as const).map((stage) => ({
       name: stage,
       color: FUNNEL_STAGE_COLORS[stage],
       data: pts.filter((p) => p.stage === stage),
     }));
-  }, [minDealSize]);
+  }, [filterDim, filterValues]);
 
-  const visibleCount = minDealSize > 0 ? allBubblePoints.filter((p) => p.z >= minDealSize).length : allBubblePoints.length;
+  const { visibleCount, activeDim } = React.useMemo(() => {
+    const dim    = FILTER_DIMS.find((d) => d.key === filterDim)!;
+    const minVal = filterValues[filterDim];
+    const count  = minVal > 0
+      ? allBubblePoints.filter((p) => dim.extract(p.name, p.z) >= minVal).length
+      : allBubblePoints.length;
+    return { visibleCount: count, activeDim: dim };
+  }, [filterDim, filterValues]);
 
   const handleBubbleClick = React.useCallback((pt: SelectedPoint) => setSelectedPoint(pt), []);
 
@@ -426,22 +491,43 @@ export function SalesPipelineView() {
             <CardTitle className="text-base">Pipeline Funnel</CardTitle>
             <CardDescription>Deal size and volume across pipeline stages</CardDescription>
           </div>
-          <div className="flex flex-col items-end gap-1.5 min-w-[180px]">
-            <div className="flex items-center justify-between w-full gap-2">
-              <span className="text-xs text-muted-foreground whitespace-nowrap">Min deal size</span>
-              <span className="text-xs font-semibold tabular-nums text-right">
-                {minDealSize === 0 ? "All" : `≥ $${Math.round(minDealSize / 1000)}K`}
-                <span className="ml-1.5 text-muted-foreground font-normal">· {visibleCount} deal{visibleCount !== 1 ? "s" : ""}</span>
-              </span>
+          <div className="flex flex-col gap-2 min-w-[260px]">
+            {/* Dimension pills */}
+            <div className="flex items-center gap-1.5 flex-wrap justify-end">
+              {FILTER_DIMS.map((dim) => (
+                <button
+                  key={dim.key}
+                  onClick={() => setFilterDim(dim.key)}
+                  className={`text-xs px-2.5 py-0.5 rounded-full font-medium border transition-colors ${
+                    filterDim === dim.key
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-transparent text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
+                  }`}
+                >
+                  {dim.label}
+                </button>
+              ))}
             </div>
-            <Slider
-              min={0}
-              max={MAX_DEAL_SIZE}
-              step={10000}
-              value={[minDealSize]}
-              onValueChange={([v]) => setMinDealSize(v)}
-              className="w-full"
-            />
+            {/* Slider */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-muted-foreground whitespace-nowrap">{activeDim.label}</span>
+                <span className="text-xs font-semibold tabular-nums">
+                  {activeDim.format(filterValues[filterDim])}
+                  <span className="ml-1.5 text-muted-foreground font-normal">
+                    · {visibleCount} deal{visibleCount !== 1 ? "s" : ""}
+                  </span>
+                </span>
+              </div>
+              <Slider
+                min={activeDim.min}
+                max={activeDim.max}
+                step={activeDim.step}
+                value={[filterValues[filterDim]]}
+                onValueChange={([v]) => setFilterValues((prev) => ({ ...prev, [filterDim]: v }))}
+                className="w-full"
+              />
+            </div>
           </div>
         </CardHeader>
 
