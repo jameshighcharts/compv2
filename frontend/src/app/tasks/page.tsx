@@ -208,27 +208,27 @@ export default function TasksPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[110px]">ID</TableHead>
-                  <TableHead>Question</TableHead>
-                  <TableHead className="w-[120px]">Requester</TableHead>
-                  <TableHead className="w-[110px]">Priority</TableHead>
-                  <TableHead className="w-[130px]">Status</TableHead>
-                  <TableHead className="w-[130px] text-right">Due Date</TableHead>
+                  <TableHead className="w-[110px] text-foreground">ID</TableHead>
+                  <TableHead className="text-foreground">Question</TableHead>
+                  <TableHead className="w-[120px] text-foreground">Requester</TableHead>
+                  <TableHead className="w-[110px] text-foreground">Priority</TableHead>
+                  <TableHead className="w-[130px] text-foreground">Status</TableHead>
+                  <TableHead className="w-[130px] text-right text-foreground">Due Date</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {currentAdhocs.map((task) => (
                   <TableRow key={task.id}>
-                    <TableCell className="font-medium">{task.id}</TableCell>
-                    <TableCell>{task.question}</TableCell>
-                    <TableCell>{task.requester}</TableCell>
+                    <TableCell className="font-medium text-foreground">{task.id}</TableCell>
+                    <TableCell className="text-foreground">{task.question}</TableCell>
+                    <TableCell className="text-foreground">{task.requester}</TableCell>
                     <TableCell>
                       <Badge variant={priorityVariant(task.priority)}>{formatLabel(task.priority)}</Badge>
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">{formatLabel(task.status)}</Badge>
                     </TableCell>
-                    <TableCell className="text-right">{task.dueDate}</TableCell>
+                    <TableCell className="text-right text-foreground">{task.dueDate}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -252,27 +252,27 @@ export default function TasksPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[110px]">ID</TableHead>
-                  <TableHead>Question</TableHead>
-                  <TableHead className="w-[130px]">Requester</TableHead>
-                  <TableHead className="w-[130px]">Completed</TableHead>
-                  <TableHead className="w-[180px] text-right">Report</TableHead>
+                  <TableHead className="w-[110px] text-foreground">ID</TableHead>
+                  <TableHead className="text-foreground">Question</TableHead>
+                  <TableHead className="w-[130px] text-foreground">Requester</TableHead>
+                  <TableHead className="w-[130px] text-foreground">Completed</TableHead>
+                  <TableHead className="w-[180px] text-right text-foreground">Report</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {completedAdhocs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center">
+                    <TableCell colSpan={5} className="text-center text-foreground">
                       No completed adhocs yet.
                     </TableCell>
                   </TableRow>
                 ) : (
                   completedAdhocs.map((task) => (
                     <TableRow key={task.id}>
-                      <TableCell className="font-medium">{task.id}</TableCell>
-                      <TableCell>{task.question}</TableCell>
-                      <TableCell>{task.requester}</TableCell>
-                      <TableCell>{task.dueDate}</TableCell>
+                      <TableCell className="font-medium text-foreground">{task.id}</TableCell>
+                      <TableCell className="text-foreground">{task.question}</TableCell>
+                      <TableCell className="text-foreground">{task.requester}</TableCell>
+                      <TableCell className="text-foreground">{task.dueDate}</TableCell>
                       <TableCell className="text-right">
                         <Button variant="outline" size="sm" onClick={() => handleDownloadReport(task)}>
                           <IconDownload className="mr-2 size-4" />

@@ -20,18 +20,18 @@ export function DashboardReportsTab() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Report</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Period</TableHead>
-                <TableHead className="text-right">Download</TableHead>
+                <TableHead className="text-foreground">Report</TableHead>
+                <TableHead className="text-foreground">Type</TableHead>
+                <TableHead className="text-foreground">Period</TableHead>
+                <TableHead className="text-right text-foreground">Download</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {reportFiles.map((report) => (
                 <TableRow key={report.id}>
-                  <TableCell className="font-medium">{report.name}</TableCell>
-                  <TableCell>{report.type}</TableCell>
-                  <TableCell>{report.period}</TableCell>
+                  <TableCell className="font-medium text-foreground">{report.name}</TableCell>
+                  <TableCell className="text-foreground">{report.type}</TableCell>
+                  <TableCell className="text-foreground">{report.period}</TableCell>
                   <TableCell className="text-right">
                     <Button variant="outline" size="sm">
                       <IconFileDescription className="mr-2 size-4" />

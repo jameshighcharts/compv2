@@ -37,7 +37,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader className="flex flex-col gap-2 p-2">
         <div className="flex items-center gap-1.5">
           <SidebarTrigger className="size-8 shrink-0 rounded-md border border-sidebar-border/60" />
-          <SidebarMenu className="min-w-0 flex-1">
+          <SidebarMenu className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
             <SidebarMenuItem>
               <SidebarMenuButton
                 size="lg"
