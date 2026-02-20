@@ -245,10 +245,10 @@ export function DashboardSalesRevenueTab() {
               Previous
             </span>
           </div>
-          <p className="mt-1 text-center text-[11px] font-medium text-foreground">
+          <p className="mt-1 text-center text-[13px] font-medium text-foreground">
             {Math.round((srGaugeItems[0].value / srGaugeItems[0].target) * 100)}% of target reached
           </p>
-          <p className="mt-0.5 text-center text-[11px] text-muted-foreground">{srGaugeItems[0].subtitle}</p>
+          <p className="mt-0.5 text-center text-[13px] text-muted-foreground">{srGaugeItems[0].subtitle}</p>
         </div>
 
         <Card className="gap-0 py-0">
@@ -288,10 +288,10 @@ export function DashboardSalesRevenueTab() {
               Previous
             </span>
           </div>
-          <p className="mt-1 text-center text-[11px] font-medium text-foreground">
+          <p className="mt-1 text-center text-[13px] font-medium text-foreground">
             {Math.round((srGaugeItems[1].value / srGaugeItems[1].target) * 100)}% of target reached
           </p>
-          <p className="mt-0.5 text-center text-[11px] text-muted-foreground">{srGaugeItems[1].subtitle}</p>
+          <p className="mt-0.5 text-center text-[13px] text-muted-foreground">{srGaugeItems[1].subtitle}</p>
         </div>
 
         <Card className="gap-0 py-0">
