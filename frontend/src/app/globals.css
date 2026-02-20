@@ -321,3 +321,190 @@
 .sp-pipeline-grid .sp-prob-high   { color: #059669; font-weight: 600; }
 .sp-pipeline-grid .sp-prob-medium { color: #d97706; font-weight: 600; }
 .sp-pipeline-grid .sp-prob-low    { color: #ef4444; font-weight: 600; }
+
+/* ── Daily Scorecards grid cells ──────────────────────────────────────────── */
+.sc-grid-cell {
+  color: var(--foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Full summary table */
+.sc-summary-card {
+  border-color: #d8e1ec;
+  background: #f4f6fa;
+}
+
+.sc-summary-grid .hcg-container {
+  --hcg-border-width: 0;
+  --hcg-padding: 0;
+  --hcg-header-vertical-padding: 9px;
+  --hcg-header-horizontal-padding: 10px;
+  --hcg-vertical-padding: 11px;
+  --hcg-horizontal-padding: 10px;
+  --hcg-font-size: 14px;
+  --hcg-header-font-size: 13px;
+  --hcg-header-font-weight: 600;
+  --hcg-row-border-color: #dce3ed;
+  --hcg-header-row-border-color: #c9d2df;
+  --hcg-row-even-background: transparent;
+  --hcg-row-hover-background: transparent;
+  --hcg-header-color: #5f728a;
+  --hcg-color: #111827;
+  --hcg-background: transparent;
+}
+
+.sc-summary-grid .hcg-table th,
+.sc-summary-grid .hcg-table td {
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.sc-summary-grid .hcg-table thead th {
+  background: #e7ecf2;
+}
+
+.sc-summary-grid .hcg-table tbody tr:last-child td {
+  background: #e5ebf2;
+  border-top: 2px solid #cfd8e4;
+  font-weight: 700;
+}
+
+.sc-summary-grid .sc-summary-cell {
+  color: #111827;
+  font-variant-numeric: tabular-nums;
+}
+
+.sc-summary-grid .sc-summary-segment {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.sc-summary-grid .sc-summary-segment-dot {
+  height: 10px;
+  width: 10px;
+  border-radius: 2px;
+}
+
+.sc-summary-grid .sc-summary-segment-low {
+  color: #26b9d4;
+}
+
+.sc-summary-grid .sc-summary-segment-low .sc-summary-segment-dot {
+  background: #26b9d4;
+}
+
+.sc-summary-grid .sc-summary-segment-medium {
+  color: #5b5ee7;
+}
+
+.sc-summary-grid .sc-summary-segment-medium .sc-summary-segment-dot {
+  background: #5b5ee7;
+}
+
+.sc-summary-grid .sc-summary-segment-high {
+  color: #f59e0b;
+}
+
+.sc-summary-grid .sc-summary-segment-high .sc-summary-segment-dot {
+  background: #f59e0b;
+}
+
+.sc-summary-grid .sc-summary-segment-enterprise {
+  color: #ef3d57;
+}
+
+.sc-summary-grid .sc-summary-segment-enterprise .sc-summary-segment-dot {
+  background: #ef3d57;
+}
+
+.sc-summary-grid .sc-summary-segment-total {
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.sc-summary-grid .sc-summary-range {
+  color: #8a9cb2;
+  font-size: 12px;
+}
+
+.sc-summary-grid .sc-summary-money {
+  color: #111827;
+  font-weight: 700;
+}
+
+.sc-summary-grid .sc-summary-orders {
+  color: #111827;
+  font-weight: 700;
+}
+
+.sc-summary-grid .sc-summary-bar-cell {
+  display: inline-flex;
+  min-width: 100%;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sc-summary-grid .sc-summary-bar-track {
+  display: block;
+  height: 16px;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 3px;
+  background: #dfe5ed;
+}
+
+.sc-summary-grid .sc-summary-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+}
+
+.sc-summary-grid .sc-summary-bar-fill-low {
+  background: #24b8d2;
+}
+
+.sc-summary-grid .sc-summary-bar-fill-medium {
+  background: #5d60e8;
+}
+
+.sc-summary-grid .sc-summary-bar-fill-high {
+  background: #f59e0b;
+}
+
+.sc-summary-grid .sc-summary-bar-fill-enterprise {
+  background: #ef3d57;
+}
+
+.sc-summary-grid .sc-summary-bar-label {
+  color: #6d7f96;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.sc-summary-grid .sc-summary-total-percent {
+  color: #111827;
+  font-weight: 700;
+}
+
+.sc-summary-grid .sc-summary-yoy-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.sc-summary-grid .sc-summary-yoy-positive {
+  background: #c6ead2;
+  color: #149647;
+}
+
+.sc-summary-grid .sc-summary-yoy-negative {
+  background: #f6d6d6;
+  color: #d9292b;
+}

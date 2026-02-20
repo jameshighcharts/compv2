@@ -37,8 +37,12 @@ export const navGeneral: SidebarNavItem[] = [
   },
   {
     title: "Sales Pipeline",
-    href: "/sales-pipeline",
     icon: IconChartFunnel,
+    defaultOpen: true,
+    subItems: [
+      { title: "Pipeline", href: "/sales-pipeline" },
+      { title: "Daily Scorecards", href: "/daily-scorecards" },
+    ],
   },
   {
     title: "Adhocs & Tasks",

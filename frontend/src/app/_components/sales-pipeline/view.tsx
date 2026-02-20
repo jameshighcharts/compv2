@@ -9,7 +9,25 @@ import { DashboardHighchart, createBaseChartOptions } from "@/components/ui/high
 import { HighchartsGridPro } from "@/components/ui/highcharts-grid-pro";
 import { Slider } from "@/components/ui/slider";
 
-import { allBubblePoints, allDeals, BubblePoint, COMPANY_INFO, FILTER_RANGES, FUNNEL_STAGE_COLORS, MAX_DEAL_SIZE, pipelineDeals, salesPipelineKpis, wonDeals } from "./data";
+import {
+  allBubblePoints,
+  allDeals,
+  BubblePoint,
+  Deal,
+  COMPANY_INFO,
+  FILTER_RANGES,
+  FUNNEL_BUBBLE_MAX_SIZE,
+  FUNNEL_BUBBLE_MIN_SIZE,
+  FUNNEL_STAGE_BUBBLE_SIZES,
+  FUNNEL_BUBBLE_Z_MAX,
+  FUNNEL_BUBBLE_Z_MIN,
+  FUNNEL_STAGE_COLORS,
+  MAX_DEAL_SIZE,
+  pipelineDeals,
+  salesPipelineKpis,
+  STAGE_MONTHLY_ADDS,
+  wonDeals,
+} from "./data";
 import { ArrKpiCard } from "../dashboard-one/cards";
 
 // ─── Grid options ─────────────────────────────────────────────────────────────
@@ -361,10 +379,10 @@ function buildFunnelChartOptions(
     },
     plotOptions: {
       bubble: {
-        minSize: "4%",
-        maxSize: "11%",
-        zMin: 25000,
-        zMax: 500000,
+        minSize: FUNNEL_BUBBLE_MIN_SIZE,
+        maxSize: FUNNEL_BUBBLE_MAX_SIZE,
+        zMin: FUNNEL_BUBBLE_Z_MIN,
+        zMax: FUNNEL_BUBBLE_Z_MAX,
         opacity: 0.82,
         marker: {
           lineWidth: 1,
@@ -406,19 +424,27 @@ function buildFunnelChartOptions(
           </div>`;
       },
     },
-    series: series.map((s) => ({
-      type: "bubble" as const,
-      name: s.name,
-      color: s.color,
-      data: s.data.map((pt) => ({
-        x: pt.x,
-        y: pt.y,
-        z: pt.z,
-        name: pt.name,
-        stage: pt.stage,
-        probability: pt.probability,
-      })),
-    })),
+    series: series.map((s) => {
+      const stage = s.name as Deal["stage"];
+      const size = FUNNEL_STAGE_BUBBLE_SIZES[stage];
+      return {
+        type: "bubble" as const,
+        name: s.name,
+        color: s.color,
+        minSize: size?.minSize ?? FUNNEL_BUBBLE_MIN_SIZE,
+        maxSize: size?.maxSize ?? FUNNEL_BUBBLE_MAX_SIZE,
+        zMin: size?.zMin ?? FUNNEL_BUBBLE_Z_MIN,
+        zMax: size?.zMax ?? FUNNEL_BUBBLE_Z_MAX,
+        data: s.data.map((pt) => ({
+          x: pt.x,
+          y: pt.y,
+          z: pt.z,
+          name: pt.name,
+          stage: pt.stage,
+          probability: pt.probability,
+        })),
+      };
+    }),
   });
 }
 
@@ -537,6 +563,43 @@ export function SalesPipelineView() {
             className="h-[460px] w-full"
           />
         </CardContent>
+
+        {/* ── Per-stage "added this month" KPIs ─────────────────────────── */}
+        <div className="grid grid-cols-2 border-t border-border sm:grid-cols-4">
+          {STAGE_MONTHLY_ADDS.map((s, i) => (
+            <div
+              key={s.stage}
+              className={`flex flex-col gap-2 p-5 ${i < STAGE_MONTHLY_ADDS.length - 1 ? "border-r border-border" : ""}`}
+            >
+              {/* Stage label with colour dot */}
+              <div className="flex items-center gap-2">
+                <span
+                  className="inline-block h-2 w-2 rounded-full"
+                  style={{ backgroundColor: FUNNEL_STAGE_COLORS[s.stage] }}
+                />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  {s.stage}
+                </span>
+              </div>
+
+              {/* Primary: deal count */}
+              <div className="flex items-end gap-2">
+                <span className="text-3xl font-bold tabular-nums leading-none">{s.dealsAdded}</span>
+                <span className="mb-0.5 text-sm text-muted-foreground">deals</span>
+              </div>
+
+              {/* Secondary: total value */}
+              <div className="text-base font-semibold tabular-nums text-foreground">
+                {s.valueAdded}
+              </div>
+
+              {/* Delta vs last month */}
+              <p className={`text-xs font-medium ${s.positive ? "text-emerald-500" : "text-red-500"}`}>
+                {s.valueDelta} vs last month
+              </p>
+            </div>
+          ))}
+        </div>
       </Card>
 
       {/* Grids */}

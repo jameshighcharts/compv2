@@ -19,7 +19,7 @@ export type BubblePoint = {
   probability: number;
 };
 
-export const allDeals: Deal[] = [
+const BASE_DEALS: Deal[] = [
   // ── Scoping (22) ─────────────────────────────────────────────────────────────
   { company: "Acme Corp",      contact: "James Harlow",   dealSize:  45000, stage: "Scoping",   probability: 20, expectedClose: "2026-05-30", lastActivity: "2 days ago"  },
   { company: "Cloudwave",      contact: "Sarah Lin",      dealSize: 120000, stage: "Scoping",   probability: 25, expectedClose: "2026-06-15", lastActivity: "5 days ago"  },
@@ -97,39 +97,711 @@ export const allDeals: Deal[] = [
   { company: "Specter",        contact: "Lucas Wright",   dealSize:  42000, stage: "Won",       probability: 100, expectedClose: "2026-02-05", lastActivity: "2026-02-05" },
 ];
 
+const GENERATED_OPPORTUNITY_COUNT = 200;
+const GENERATED_STAGE_DISTRIBUTION: Array<{ stage: Deal["stage"]; count: number }> = [
+  { stage: "Scoping", count: 70 },
+  { stage: "Proposal", count: 60 },
+  { stage: "Committed", count: 50 },
+  { stage: "Won", count: 20 },
+];
+const GENERATED_INDUSTRIES = [
+  "Revenue Intelligence",
+  "Cybersecurity",
+  "Cloud Infrastructure",
+  "Supply Chain",
+  "Healthcare IT",
+  "FinTech",
+  "Data Engineering",
+  "AI / ML Platform",
+  "Compliance Tech",
+  "DevTools",
+  "Sales Enablement",
+  "Workflow Automation",
+  "Customer Success",
+  "Analytics Platform",
+];
+const COMPANY_PREFIXES = [
+  "Aster", "Beacon", "Cinder", "Delta", "Echo", "Falcon", "Granite", "Harbor", "Ion",
+  "Juniper", "Keystone", "Lumen", "Merit", "Nimbus", "Orion", "Pioneer", "Quanta",
+  "Rivet", "Summit", "Titan", "Union", "Vector", "Waypoint", "Xeno", "Yield", "Zenith",
+];
+const COMPANY_SUFFIXES = [
+  "Labs", "Systems", "Cloud", "Data", "Works", "Dynamics", "Logic", "Forge", "Bridge",
+  "Nexus", "Grid", "Flow", "Core", "Stack", "Signal", "Pilot", "Point",
+];
+const CONTACT_FIRST_NAMES = [
+  "Ava", "Noah", "Emma", "Liam", "Mia", "Ethan", "Olivia", "Lucas", "Sophia", "Mason",
+  "Isla", "Logan", "Amelia", "Aiden", "Charlotte", "Elijah", "Harper", "Jackson",
+];
+const CONTACT_LAST_NAMES = [
+  "Adams", "Brooks", "Carter", "Diaz", "Edwards", "Foster", "Gibson", "Hayes", "Irwin",
+  "Jordan", "Keller", "Lopez", "Mitchell", "Nguyen", "Owens", "Parker", "Quinn", "Reed",
+  "Shaw", "Turner", "Underwood", "Vargas", "Walker", "Young",
+];
+const RELATIVE_ACTIVITY = [
+  "Today",
+  "1 day ago",
+  "2 days ago",
+  "3 days ago",
+  "4 days ago",
+  "5 days ago",
+  "1 week ago",
+];
+
+function makeDataRng(seed: number): () => number {
+  let s = seed >>> 0;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+
+function pickOne<T>(rng: () => number, values: readonly T[]): T {
+  return values[Math.floor(rng() * values.length)] as T;
+}
+
+function randInt(rng: () => number, min: number, max: number): number {
+  return Math.floor(rng() * (max - min + 1)) + min;
+}
+
+function addDaysIso(baseIso: string, deltaDays: number): string {
+  const d = new Date(`${baseIso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + deltaDays);
+  return d.toISOString().slice(0, 10);
+}
+
+function stageDealSize(stage: Deal["stage"], rng: () => number): number {
+  const ranges: Record<Deal["stage"], [number, number]> = {
+    Scoping:   [25000, 420000],
+    Proposal:  [30000, 500000],
+    Committed: [35000, 500000],
+    Won:       [25000, 380000],
+  };
+  const [min, max] = ranges[stage];
+  return Math.round(randInt(rng, min, max) / 1000) * 1000;
+}
+
+function stageProbability(stage: Deal["stage"], rng: () => number): number {
+  if (stage === "Won") return 100;
+  const options: Record<Exclude<Deal["stage"], "Won">, number[]> = {
+    Scoping: [15, 20, 25, 30, 35],
+    Proposal: [40, 45, 50, 55, 60, 65],
+    Committed: [70, 75, 80, 85, 90, 95],
+  };
+  return pickOne(rng, options[stage]);
+}
+
+function stageExpectedClose(stage: Deal["stage"], rng: () => number): string {
+  const base = "2026-02-20";
+  const ranges: Record<Deal["stage"], [number, number]> = {
+    Scoping:   [75, 260],
+    Proposal:  [40, 190],
+    Committed: [10, 100],
+    Won:       [-90, -2],
+  };
+  const [min, max] = ranges[stage];
+  return addDaysIso(base, randInt(rng, min, max));
+}
+
+function stageLastActivity(stage: Deal["stage"], expectedClose: string, rng: () => number): string {
+  return stage === "Won" ? expectedClose : pickOne(rng, RELATIVE_ACTIVITY);
+}
+
+function stageContact(rng: () => number): string {
+  return `${pickOne(rng, CONTACT_FIRST_NAMES)} ${pickOne(rng, CONTACT_LAST_NAMES)}`;
+}
+
+function buildGeneratedOpportunities(): Deal[] {
+  const planned = GENERATED_STAGE_DISTRIBUTION.reduce((sum, item) => sum + item.count, 0);
+  if (planned !== GENERATED_OPPORTUNITY_COUNT) {
+    throw new Error(`Expected ${GENERATED_OPPORTUNITY_COUNT} generated opportunities, got ${planned}.`);
+  }
+
+  const rng = makeDataRng(0x5f3759df);
+  const existingCompanies = new Set(BASE_DEALS.map((d) => d.company));
+  const generated: Deal[] = [];
+  let serial = 1;
+
+  for (const { stage, count } of GENERATED_STAGE_DISTRIBUTION) {
+    for (let i = 0; i < count; i++) {
+      let company = "";
+      while (!company || existingCompanies.has(company)) {
+        const suffixSerial = String(serial).padStart(3, "0");
+        company = `${pickOne(rng, COMPANY_PREFIXES)} ${pickOne(rng, COMPANY_SUFFIXES)} ${suffixSerial}`;
+        serial += 1;
+      }
+      existingCompanies.add(company);
+      const expectedClose = stageExpectedClose(stage, rng);
+      generated.push({
+        company,
+        contact: stageContact(rng),
+        dealSize: stageDealSize(stage, rng),
+        stage,
+        probability: stageProbability(stage, rng),
+        expectedClose,
+        lastActivity: stageLastActivity(stage, expectedClose, rng),
+      });
+    }
+  }
+  return generated;
+}
+
+const GENERATED_OPPORTUNITIES: Deal[] = buildGeneratedOpportunities();
+export const allDeals: Deal[] = [...BASE_DEALS, ...GENERATED_OPPORTUNITIES];
+
 export const wonDeals      = allDeals.filter((d) => d.stage === "Won");
 export const pipelineDeals = allDeals.filter((d) => d.stage !== "Won");
 
-// ─── Bubble chart positions (computed from deal data) ─────────────────────────
+// ─── Bubble chart positions (per-stage packed physics) ────────────────────────
 
-const STAGE_PARAMS: Record<Deal["stage"], { index: number; yBound: number }> = {
-  Scoping:   { index: 0, yBound: 3.8 },
-  Proposal:  { index: 1, yBound: 2.8 },
-  Committed: { index: 2, yBound: 1.8 },
-  Won:       { index: 3, yBound: 1.0 },
+// Mirrors the funnel trapezoid from view.tsx: left (x=-0.5) → ±4.5, right (x=3.5) → ±1.5
+function funnelBoundAtX(x: number): number {
+  return 4.5 - 3.0 * (x + 0.5) / 4.0;
+}
+
+const X_MIN = -0.5;
+const X_MAX = 3.5;
+const Y_MIN = -5;
+const Y_MAX = 5;
+
+// Approximate plot size for layout calculations.
+const PX_W     = 1050;
+const PX_H     = 420;
+const PX_PER_X = PX_W / (X_MAX - X_MIN);
+const PX_PER_Y = PX_H / (Y_MAX - Y_MIN);
+
+export const FUNNEL_BUBBLE_Z_MIN = 25000;
+export const FUNNEL_BUBBLE_Z_MAX = 500000;
+
+const DESIRED_MIN_SIZE_FRACTION = 0.05;
+const DESIRED_MAX_SIZE_FRACTION = 0.24;
+const HC_SMALLER = Math.min(PX_W, PX_H);
+const Z_LO = FUNNEL_BUBBLE_Z_MIN;
+const Z_HI = FUNNEL_BUBBLE_Z_MAX;
+
+const PACK_GAP = 1;
+const SECTION_X_INSET = 0.01;
+const SECTION_Y_INSET = 0.975;
+const TARGET_FILL_RATIO = 0.86;
+const RELAX_STEPS = 600;
+const OVERLAP_PUSH_BASE = 0.75;
+const OVERLAP_PUSH_COOLING = 0.20;
+const NEAR_GAP_ATTRACT_RANGE = 22;
+const NEAR_GAP_ATTRACT_BASE = 0.002;
+const NEAR_GAP_ATTRACT_COOLING = 0.001;
+const FAR_FIELD_REPEL = 80;
+const CENTER_GRAVITY = 0.0001;
+const OUTWARD_COVERAGE_PUSH = 0.004;
+const VELOCITY_DAMPING = 0.84;
+const MAX_SPEED_PX = 16;
+const TARGET_COVERAGE_X = 0.97;
+const TARGET_COVERAGE_Y = 0.95;
+const TARGET_MAX_RESIDUAL_OVERLAP_PX = 0.0005;
+const DEOVERLAP_SWEEPS = 560;
+
+interface SizeModel {
+  minFraction: number;
+  maxFraction: number;
+  minPx: number;
+  maxPx: number;
+}
+
+interface StageSeriesSizing {
+  minSize: string;
+  maxSize: string;
+  zMin: number;
+  zMax: number;
+}
+
+type StageXBoundsPx = { left: number; right: number };
+
+interface PackedCircle {
+  idx: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  rp: number;
+}
+
+const STAGE_ORDER: Deal["stage"][] = ["Scoping", "Proposal", "Committed", "Won"];
+const STAGE_IDX: Record<Deal["stage"], number> = {
+  Scoping: 0, Proposal: 1, Committed: 2, Won: 3,
+};
+const STAGE_DEALS: Record<Deal["stage"], Deal[]> = {
+  Scoping: allDeals.filter((d) => d.stage === "Scoping"),
+  Proposal: allDeals.filter((d) => d.stage === "Proposal"),
+  Committed: allDeals.filter((d) => d.stage === "Committed"),
+  Won: allDeals.filter((d) => d.stage === "Won"),
 };
 
-const X_JITTER = [-0.07, 0.05, -0.03, 0.08, 0.00, -0.06, 0.04, -0.02, 0.07, 0.01];
+function makeSizeModel(scale: number): SizeModel {
+  const minFraction = DESIRED_MIN_SIZE_FRACTION * scale;
+  const maxFraction = DESIRED_MAX_SIZE_FRACTION * scale;
+  return {
+    minFraction,
+    maxFraction,
+    minPx: minFraction * HC_SMALLER / 2,
+    maxPx: maxFraction * HC_SMALLER / 2,
+  };
+}
 
-function computeStagePoints(stageDeals: Deal[], stage: Deal["stage"]): BubblePoint[] {
-  const { index, yBound } = STAGE_PARAMS[stage];
-  const n = stageDeals.length;
-  return stageDeals.map((d, i) => ({
-    x: parseFloat((index + X_JITTER[i % X_JITTER.length]).toFixed(3)),
-    y: parseFloat((n === 1 ? 0 : -yBound + (2 * yBound * i) / (n - 1)).toFixed(3)),
+function rPx(z: number, size: SizeModel): number {
+  const t = Math.max(0, Math.min(1, (z - Z_LO) / (Z_HI - Z_LO)));
+  return size.minPx + t * (size.maxPx - size.minPx);
+}
+
+function stageXBoundsPx(stageIndex: number): StageXBoundsPx {
+  return {
+    left: (stageIndex - 0.5 + SECTION_X_INSET) * PX_PER_X,
+    right: (stageIndex + 0.5 - SECTION_X_INSET) * PX_PER_X,
+  };
+}
+
+function stageHalfHeightPxAtXPx(xPx: number): number {
+  return funnelBoundAtX(xPx / PX_PER_X) * PX_PER_Y * SECTION_Y_INSET;
+}
+
+function clampCircleToStage(circle: PackedCircle, xBounds: StageXBoundsPx): void {
+  circle.x = Math.max(xBounds.left + circle.rp, Math.min(xBounds.right - circle.rp, circle.x));
+  const capY = Math.max(0, stageHalfHeightPxAtXPx(circle.x) - circle.rp);
+  circle.y = Math.max(-capY, Math.min(capY, circle.y));
+}
+
+function expandCoverage(circles: PackedCircle[], xBounds: StageXBoundsPx, centerXPx: number): void {
+  if (circles.length === 0) return;
+  const widthAvailable = xBounds.right - xBounds.left;
+  const xMin = Math.min(...circles.map((c) => c.x - c.rp));
+  const xMax = Math.max(...circles.map((c) => c.x + c.rp));
+  const currentWidth = xMax - xMin;
+  const targetWidth = widthAvailable * TARGET_COVERAGE_X;
+
+  if (currentWidth > 1e-3 && currentWidth < targetWidth) {
+    let maxScale = Number.POSITIVE_INFINITY;
+    for (const c of circles) {
+      const dx = c.x - centerXPx;
+      if (dx > 1e-4) {
+        maxScale = Math.min(maxScale, (xBounds.right - c.rp - centerXPx) / dx);
+      } else if (dx < -1e-4) {
+        maxScale = Math.min(maxScale, (xBounds.left + c.rp - centerXPx) / dx);
+      }
+    }
+    const needScale = targetWidth / currentWidth;
+    const scale = Math.max(1, Math.min(needScale, maxScale * 0.998));
+    if (scale > 1.0005) {
+      for (const c of circles) {
+        c.x = centerXPx + (c.x - centerXPx) * scale;
+        clampCircleToStage(c, xBounds);
+      }
+    }
+  }
+
+  const centerCap = stageHalfHeightPxAtXPx(centerXPx);
+  const targetHeight = 2 * centerCap * TARGET_COVERAGE_Y;
+  const yMin = Math.min(...circles.map((c) => c.y - c.rp));
+  const yMax = Math.max(...circles.map((c) => c.y + c.rp));
+  const currentHeight = yMax - yMin;
+
+  if (currentHeight > 1e-3 && currentHeight < targetHeight) {
+    let maxScale = Number.POSITIVE_INFINITY;
+    for (const c of circles) {
+      const capY = Math.max(0, stageHalfHeightPxAtXPx(c.x) - c.rp);
+      if (Math.abs(c.y) > 1e-4) {
+        maxScale = Math.min(maxScale, capY / Math.abs(c.y));
+      }
+    }
+    const needScale = targetHeight / currentHeight;
+    const scale = Math.max(1, Math.min(needScale, maxScale * 0.998));
+    if (scale > 1.0005) {
+      for (const c of circles) {
+        c.y *= scale;
+        clampCircleToStage(c, xBounds);
+      }
+    }
+  }
+}
+
+function makeSeededRng(seed: number): () => number {
+  let s = seed >>> 0;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+
+function boundaryClearancePx(xPx: number, yPx: number, rp: number, xBounds: StageXBoundsPx): number {
+  const capY = stageHalfHeightPxAtXPx(xPx) - rp;
+  if (capY <= 0) return -1;
+  const clearLeft = xPx - (xBounds.left + rp);
+  const clearRight = (xBounds.right - rp) - xPx;
+  const clearTop = capY - yPx;
+  const clearBottom = yPx + capY;
+  return Math.min(clearLeft, clearRight, clearTop, clearBottom);
+}
+
+function minPlacementSlackPx(
+  xPx: number,
+  yPx: number,
+  rp: number,
+  circles: PackedCircle[],
+  xBounds: StageXBoundsPx,
+): number {
+  let minSlack = boundaryClearancePx(xPx, yPx, rp, xBounds);
+  if (minSlack < 0) return minSlack;
+  for (const c of circles) {
+    const clear = Math.hypot(xPx - c.x, yPx - c.y) - (rp + c.rp + PACK_GAP);
+    if (clear < minSlack) minSlack = clear;
+    if (minSlack < 0) return minSlack;
+  }
+  return minSlack;
+}
+
+function sampleInitialPlacementPx(
+  rp: number,
+  circles: PackedCircle[],
+  xBounds: StageXBoundsPx,
+  centerXPx: number,
+  rng: () => number,
+): { x: number; y: number } {
+  if (circles.length === 0) {
+    const xPx = centerXPx + (rng() - 0.5) * 18;
+    const capY = Math.max(0, stageHalfHeightPxAtXPx(xPx) - rp);
+    return { x: xPx, y: (rng() * 2 - 1) * Math.min(capY, 20) };
+  }
+
+  const sampleCount = Math.max(900, circles.length * 56);
+  let best: { x: number; y: number; score: number } | null = null;
+  for (let s = 0; s < sampleCount; s++) {
+    let xPx: number;
+    let yPx: number;
+    if (s < circles.length * 18) {
+      const anchor = circles[Math.floor(rng() * circles.length)];
+      const angle = rng() * Math.PI * 2;
+      const dist = anchor.rp + rp + PACK_GAP + rng() * 24;
+      xPx = anchor.x + Math.cos(angle) * dist;
+      yPx = anchor.y + Math.sin(angle) * dist;
+    } else {
+      const freeWidth = Math.max(1, xBounds.right - xBounds.left - 2 * rp);
+      xPx = xBounds.left + rp + rng() * freeWidth;
+      const capY = Math.max(0, stageHalfHeightPxAtXPx(xPx) - rp);
+      yPx = (rng() * 2 - 1) * capY;
+    }
+
+    const slack = minPlacementSlackPx(xPx, yPx, rp, circles, xBounds);
+    if (slack < 0) continue;
+    const centerDist = Math.hypot(xPx - centerXPx, yPx);
+    const score = slack * 9 - centerDist * 0.05;
+    if (!best || score < best.score) best = { x: xPx, y: yPx, score };
+  }
+
+  if (best) return { x: best.x, y: best.y };
+
+  // Fallback: pick least-bad location deterministically.
+  let fallbackX = centerXPx;
+  let fallbackY = 0;
+  let fallbackScore = Number.POSITIVE_INFINITY;
+  for (let s = 0; s < 3200; s++) {
+    const freeWidth = Math.max(1, xBounds.right - xBounds.left - 2 * rp);
+    const xPx = xBounds.left + rp + rng() * freeWidth;
+    const capY = Math.max(0, stageHalfHeightPxAtXPx(xPx) - rp);
+    const yPx = (rng() * 2 - 1) * capY;
+    const slack = minPlacementSlackPx(xPx, yPx, rp, circles, xBounds);
+    const score = (slack >= 0 ? slack : -slack * 24) - Math.hypot(xPx - centerXPx, yPx) * 0.04;
+    if (score < fallbackScore) {
+      fallbackScore = score;
+      fallbackX = xPx;
+      fallbackY = yPx;
+    }
+  }
+  return { x: fallbackX, y: fallbackY };
+}
+
+function stageAreaPx(stageIndex: number): number {
+  const xBounds = stageXBoundsPx(stageIndex);
+  const steps = 320;
+  const dx = (xBounds.right - xBounds.left) / steps;
+  let area = 0;
+  for (let i = 0; i < steps; i++) {
+    const x = xBounds.left + (i + 0.5) * dx;
+    area += stageHalfHeightPxAtXPx(x) * 2 * dx;
+  }
+  return area;
+}
+
+function totalCircleAreaPx(deals: Deal[], size: SizeModel): number {
+  return deals.reduce((sum, d) => {
+    const rp = rPx(d.dealSize, size);
+    return sum + Math.PI * rp * rp;
+  }, 0);
+}
+
+function solveScaleForFill(deals: Deal[], stage: Deal["stage"]): number {
+  const stageArea = stageAreaPx(STAGE_IDX[stage]);
+  const targetCircleArea = stageArea * TARGET_FILL_RATIO;
+  let low = 0.04;
+  let high = 1.0;
+  while (totalCircleAreaPx(deals, makeSizeModel(high)) < targetCircleArea && high < 2.8) {
+    high *= 1.2;
+  }
+  for (let i = 0; i < 24; i++) {
+    const mid = (low + high) / 2;
+    if (totalCircleAreaPx(deals, makeSizeModel(mid)) <= targetCircleArea) {
+      low = mid;
+    } else {
+      high = mid;
+    }
+  }
+  return low;
+}
+
+function residualOverlapPx(circles: PackedCircle[]): number {
+  let worst = 0;
+  for (let a = 0; a < circles.length; a++) {
+    for (let b = a + 1; b < circles.length; b++) {
+      const need = circles[a].rp + circles[b].rp + PACK_GAP;
+      const dist = Math.hypot(circles[b].x - circles[a].x, circles[b].y - circles[a].y);
+      worst = Math.max(worst, need - dist);
+    }
+  }
+  return Math.max(0, worst);
+}
+
+type StagePackingResult = {
+  points: BubblePoint[];
+  maxResidualOverlapPx: number;
+  size: SizeModel;
+  success: boolean;
+};
+
+function packStageAtScale(stageDeals: Deal[], stage: Deal["stage"], scale: number): StagePackingResult {
+  const size = makeSizeModel(scale);
+  const stageIndex = STAGE_IDX[stage];
+  const xBounds = stageXBoundsPx(stageIndex);
+  const centerXPx = (xBounds.left + xBounds.right) / 2;
+  const rng = makeSeededRng((0x9e3779b9 ^ ((stageIndex + 1) * 0x85ebca6b) ^ (stageDeals.length * 0xc2b2ae35)) >>> 0);
+  const ordered = stageDeals
+    .map((d, idx) => ({ deal: d, idx, rp: rPx(d.dealSize, size) }))
+    .sort((a, b) => (b.rp - a.rp) || (a.idx - b.idx));
+
+  const circles: PackedCircle[] = [];
+  for (let i = 0; i < ordered.length; i++) {
+    const entry = ordered[i];
+    const placement = sampleInitialPlacementPx(entry.rp, circles, xBounds, centerXPx, rng);
+    const circle: PackedCircle = { idx: entry.idx, x: placement.x, y: placement.y, vx: 0, vy: 0, rp: entry.rp };
+    clampCircleToStage(circle, xBounds);
+    circles.push(circle);
+  }
+
+  const fx = new Array<number>(circles.length).fill(0);
+  const fy = new Array<number>(circles.length).fill(0);
+
+  for (let it = 0; it < RELAX_STEPS; it++) {
+    fx.fill(0);
+    fy.fill(0);
+    const cool = 1 - it / RELAX_STEPS;
+
+    for (let a = 0; a < circles.length; a++) {
+      for (let b = a + 1; b < circles.length; b++) {
+        const ca = circles[a];
+        const cb = circles[b];
+        let dx = cb.x - ca.x;
+        let dy = cb.y - ca.y;
+        let dist = Math.hypot(dx, dy);
+        if (dist < 1e-4) {
+          const angle = rng() * Math.PI * 2;
+          dx = Math.cos(angle) * 1e-3;
+          dy = Math.sin(angle) * 1e-3;
+          dist = 1e-3;
+        }
+        const ux = dx / dist;
+        const uy = dy / dist;
+        const need = ca.rp + cb.rp + PACK_GAP;
+
+        if (dist < need) {
+          const push = (need - dist) * (OVERLAP_PUSH_BASE + OVERLAP_PUSH_COOLING * cool);
+          fx[a] -= ux * push;
+          fy[a] -= uy * push;
+          fx[b] += ux * push;
+          fy[b] += uy * push;
+        } else if (dist < need + NEAR_GAP_ATTRACT_RANGE) {
+          const pull = (dist - need) * (NEAR_GAP_ATTRACT_BASE + NEAR_GAP_ATTRACT_COOLING * cool);
+          fx[a] += ux * pull;
+          fy[a] += uy * pull;
+          fx[b] -= ux * pull;
+          fy[b] -= uy * pull;
+        }
+
+        const spread = FAR_FIELD_REPEL / (dist * dist + 800);
+        fx[a] -= ux * spread;
+        fy[a] -= uy * spread;
+        fx[b] += ux * spread;
+        fy[b] += uy * spread;
+      }
+    }
+
+    const jitter = 0.9 * cool;
+    for (let i = 0; i < circles.length; i++) {
+      const c = circles[i];
+      fx[i] += (centerXPx - c.x) * CENTER_GRAVITY + (c.x - centerXPx) * OUTWARD_COVERAGE_PUSH + (rng() - 0.5) * jitter;
+      fy[i] += (0 - c.y) * CENTER_GRAVITY + c.y * OUTWARD_COVERAGE_PUSH + (rng() - 0.5) * jitter;
+
+      c.vx = (c.vx + fx[i]) * VELOCITY_DAMPING;
+      c.vy = (c.vy + fy[i]) * VELOCITY_DAMPING;
+      const speed = Math.hypot(c.vx, c.vy);
+      if (speed > MAX_SPEED_PX) {
+        const scaleDown = MAX_SPEED_PX / speed;
+        c.vx *= scaleDown;
+        c.vy *= scaleDown;
+      }
+      c.x += c.vx;
+      c.y += c.vy;
+      clampCircleToStage(c, xBounds);
+    }
+  }
+
+  expandCoverage(circles, xBounds, centerXPx);
+
+  for (let pass = 0; pass < DEOVERLAP_SWEEPS; pass++) {
+    let worst = 0;
+    for (let a = 0; a < circles.length; a++) {
+      for (let b = a + 1; b < circles.length; b++) {
+        const ca = circles[a];
+        const cb = circles[b];
+        let dx = cb.x - ca.x;
+        let dy = cb.y - ca.y;
+        let dist = Math.hypot(dx, dy);
+        const need = ca.rp + cb.rp + PACK_GAP;
+        if (dist >= need) continue;
+        if (dist < 1e-6) {
+          const angle = rng() * Math.PI * 2;
+          dx = Math.cos(angle);
+          dy = Math.sin(angle);
+          dist = 1e-3;
+        }
+        const overlap = need - dist;
+        worst = Math.max(worst, overlap);
+        const ux = dx / dist;
+        const uy = dy / dist;
+        const push = overlap * 0.52 + 0.02;
+        ca.x -= ux * push;
+        ca.y -= uy * push;
+        cb.x += ux * push;
+        cb.y += uy * push;
+        clampCircleToStage(ca, xBounds);
+        clampCircleToStage(cb, xBounds);
+      }
+    }
+    if (worst <= TARGET_MAX_RESIDUAL_OVERLAP_PX) break;
+  }
+
+  const maxResidualOverlapPx = residualOverlapPx(circles);
+
+  const byIdx: Array<PackedCircle | undefined> = new Array(stageDeals.length);
+  for (const c of circles) byIdx[c.idx] = c;
+  const points = stageDeals.map((d, i) => ({
+    x: parseFloat(((byIdx[i]?.x ?? centerXPx) / PX_PER_X).toFixed(5)),
+    y: parseFloat(((byIdx[i]?.y ?? 0) / PX_PER_Y).toFixed(5)),
     z: d.dealSize,
     name: d.company,
     stage: d.stage,
     probability: d.probability,
   }));
+
+  return {
+    points,
+    maxResidualOverlapPx,
+    size,
+    success: maxResidualOverlapPx <= TARGET_MAX_RESIDUAL_OVERLAP_PX,
+  };
 }
 
-export const allBubblePoints: BubblePoint[] = [
-  ...computeStagePoints(allDeals.filter((d) => d.stage === "Scoping"),   "Scoping"),
-  ...computeStagePoints(allDeals.filter((d) => d.stage === "Proposal"),  "Proposal"),
-  ...computeStagePoints(allDeals.filter((d) => d.stage === "Committed"), "Committed"),
-  ...computeStagePoints(allDeals.filter((d) => d.stage === "Won"),       "Won"),
-];
+function solveStagePacking(stageDeals: Deal[], stage: Deal["stage"]): StagePackingResult {
+  if (stageDeals.length === 0) {
+    const size = makeSizeModel(1);
+    return { points: [], maxResidualOverlapPx: 0, size, success: true };
+  }
+
+  const areaScale = solveScaleForFill(stageDeals, stage);
+  let low = Math.max(0.05, areaScale * 0.38);
+  let lowResult = packStageAtScale(stageDeals, stage, low);
+  while (!lowResult.success && low > 0.01) {
+    low *= 0.75;
+    lowResult = packStageAtScale(stageDeals, stage, low);
+  }
+  if (!lowResult.success) return lowResult;
+
+  const high = Math.max(low, areaScale);
+  const highResult = packStageAtScale(stageDeals, stage, high);
+  if (highResult.success) return highResult;
+
+  let best = lowResult;
+  let lo = low;
+  let hi = high;
+  for (let i = 0; i < 14; i++) {
+    const mid = (lo + hi) / 2;
+    const midResult = packStageAtScale(stageDeals, stage, mid);
+    if (midResult.success) {
+      best = midResult;
+      lo = mid;
+    } else {
+      hi = mid;
+    }
+  }
+  return best;
+}
+
+type FunnelPackingSolution = {
+  points: BubblePoint[];
+  stageSizes: Record<Deal["stage"], SizeModel>;
+};
+
+function solveFunnelPacking(): FunnelPackingSolution {
+  const points: BubblePoint[] = [];
+  const stageSizes = {} as Record<Deal["stage"], SizeModel>;
+
+  for (const stage of STAGE_ORDER) {
+    const solved = solveStagePacking(STAGE_DEALS[stage], stage);
+    points.push(...solved.points);
+    stageSizes[stage] = solved.size;
+  }
+  return { points, stageSizes };
+}
+
+const FUNNEL_PACKING = solveFunnelPacking();
+
+export const FUNNEL_STAGE_BUBBLE_SIZES: Record<Deal["stage"], StageSeriesSizing> = {
+  Scoping: {
+    minSize: `${(FUNNEL_PACKING.stageSizes.Scoping.minFraction * 100).toFixed(4)}%`,
+    maxSize: `${(FUNNEL_PACKING.stageSizes.Scoping.maxFraction * 100).toFixed(4)}%`,
+    zMin: FUNNEL_BUBBLE_Z_MIN,
+    zMax: FUNNEL_BUBBLE_Z_MAX,
+  },
+  Proposal: {
+    minSize: `${(FUNNEL_PACKING.stageSizes.Proposal.minFraction * 100).toFixed(4)}%`,
+    maxSize: `${(FUNNEL_PACKING.stageSizes.Proposal.maxFraction * 100).toFixed(4)}%`,
+    zMin: FUNNEL_BUBBLE_Z_MIN,
+    zMax: FUNNEL_BUBBLE_Z_MAX,
+  },
+  Committed: {
+    minSize: `${(FUNNEL_PACKING.stageSizes.Committed.minFraction * 100).toFixed(4)}%`,
+    maxSize: `${(FUNNEL_PACKING.stageSizes.Committed.maxFraction * 100).toFixed(4)}%`,
+    zMin: FUNNEL_BUBBLE_Z_MIN,
+    zMax: FUNNEL_BUBBLE_Z_MAX,
+  },
+  Won: {
+    minSize: `${(FUNNEL_PACKING.stageSizes.Won.minFraction * 100).toFixed(4)}%`,
+    maxSize: `${(FUNNEL_PACKING.stageSizes.Won.maxFraction * 100).toFixed(4)}%`,
+    zMin: FUNNEL_BUBBLE_Z_MIN,
+    zMax: FUNNEL_BUBBLE_Z_MAX,
+  },
+};
+
+const globalMinFraction = Math.min(...STAGE_ORDER.map((stage) => FUNNEL_PACKING.stageSizes[stage].minFraction));
+const globalMaxFraction = Math.max(...STAGE_ORDER.map((stage) => FUNNEL_PACKING.stageSizes[stage].maxFraction));
+
+export const FUNNEL_BUBBLE_MIN_SIZE = `${(globalMinFraction * 100).toFixed(4)}%`;
+export const FUNNEL_BUBBLE_MAX_SIZE = `${(globalMaxFraction * 100).toFixed(4)}%`;
+export const allBubblePoints: BubblePoint[] = FUNNEL_PACKING.points;
 
 export const MAX_DEAL_SIZE = Math.max(...allDeals.map((d) => d.dealSize));
 
@@ -152,7 +824,7 @@ export type CompanyInfo = {
   description: string;
 };
 
-export const COMPANY_INFO: Record<string, CompanyInfo> = {
+const BASE_COMPANY_INFO: Record<string, CompanyInfo> = {
   // Scoping
   "Acme Corp":      { industry: "Manufacturing SaaS",     employees: "80–150",      employeeCount:  115, yearlyRevenue: "$8M ARR",    annualRevenue:   8000, foundedYear: 2016, description: "Acme Corp modernises shop-floor operations for mid-market manufacturers with real-time OEE dashboards and predictive maintenance alerts." },
   "Cloudwave":      { industry: "Cloud Infrastructure",   employees: "120–200",     employeeCount:  160, yearlyRevenue: "$14M ARR",   annualRevenue:  14000, foundedYear: 2014, description: "Cloudwave provides multi-cloud cost optimisation and workload orchestration, cutting average cloud spend by 28% for enterprise teams." },
@@ -227,6 +899,51 @@ export const COMPANY_INFO: Record<string, CompanyInfo> = {
   "Specter":        { industry: "Threat Intelligence",    employees: "40–75",       employeeCount:   58, yearlyRevenue: "$4.2M ARR",  annualRevenue:   4200, foundedYear: 2020, description: "Specter aggregates adversary-infrastructure data from dark-web forums and honeypots, giving threat-intel teams early warning of targeted attack campaigns." },
 };
 
+function formatEmployeeBand(employeeCount: number): string {
+  const lower = Math.max(20, Math.round(employeeCount * 0.72 / 5) * 5);
+  const upper = Math.max(lower + 10, Math.round(employeeCount * 1.28 / 5) * 5);
+  return `${lower.toLocaleString()}–${upper.toLocaleString()}`;
+}
+
+function formatAnnualRevenueLabel(annualRevenue: number): string {
+  const millions = annualRevenue / 1000;
+  const text = millions >= 100
+    ? millions.toFixed(0)
+    : millions.toFixed(1).replace(/\.0$/, "");
+  return `$${text}M ARR`;
+}
+
+function buildGeneratedCompanyInfo(deals: Deal[]): Record<string, CompanyInfo> {
+  const rng = makeDataRng(0x7f4a7c15);
+  const generatedInfo: Record<string, CompanyInfo> = {};
+  for (const deal of deals) {
+    if (generatedInfo[deal.company]) continue;
+    const industry = pickOne(rng, GENERATED_INDUSTRIES);
+    const foundedYear = randInt(rng, 2007, 2024);
+    const revenueMultiplier = randInt(rng, 22, 135);
+    const annualRevenueRaw = Math.round((deal.dealSize / 1000) * revenueMultiplier);
+    const annualRevenue = Math.max(2200, Math.min(180000, Math.round(annualRevenueRaw / 100) * 100));
+    const baseHeadcount = Math.round(annualRevenue / randInt(rng, 75, 190));
+    const employeeCount = Math.max(24, Math.min(2200, baseHeadcount + randInt(rng, -20, 20)));
+    generatedInfo[deal.company] = {
+      industry,
+      employees: formatEmployeeBand(employeeCount),
+      employeeCount,
+      yearlyRevenue: formatAnnualRevenueLabel(annualRevenue),
+      annualRevenue,
+      foundedYear,
+      description: `${deal.company} provides ${industry.toLowerCase()} software for revenue teams, combining automation and analytics to improve pipeline velocity and close outcomes.`,
+    };
+  }
+  return generatedInfo;
+}
+
+const GENERATED_COMPANY_INFO = buildGeneratedCompanyInfo(GENERATED_OPPORTUNITIES);
+export const COMPANY_INFO: Record<string, CompanyInfo> = {
+  ...BASE_COMPANY_INFO,
+  ...GENERATED_COMPANY_INFO,
+};
+
 // Precomputed ranges used by filter-dimension sliders
 export const FILTER_RANGES = {
   maxAnnualRevenue: Math.max(...Object.values(COMPANY_INFO).map((c) => c.annualRevenue)),
@@ -275,4 +992,26 @@ export const salesPipelineKpis = [
     trend: `${fmtVal(wonTotal)} closed this quarter`,
     positive: true,
   },
+];
+
+// ─── Stage monthly adds (mock — "added this month" per stage) ─────────────────
+
+export type StageMonthlyAdd = {
+  stage: "Scoping" | "Proposal" | "Committed" | "Won";
+  dealsAdded: number;
+  valueAdded: string;
+  valueDelta: string;   // vs last month, e.g. "+12%"
+  positive: boolean;
+};
+
+// Won totals are derived from real data; others are mock.
+const wonMtdTotal = wonDeals
+  .filter((d) => d.expectedClose.startsWith("2026-02"))
+  .reduce((s, d) => s + d.dealSize, 0);
+
+export const STAGE_MONTHLY_ADDS: StageMonthlyAdd[] = [
+  { stage: "Scoping",   dealsAdded: 14, valueAdded: fmtVal(1_840_000), valueDelta: "+8%",  positive: true  },
+  { stage: "Proposal",  dealsAdded: 9,  valueAdded: fmtVal(1_320_000), valueDelta: "+5%",  positive: true  },
+  { stage: "Committed", dealsAdded: 6,  valueAdded: fmtVal(920_000),   valueDelta: "-3%",  positive: false },
+  { stage: "Won",       dealsAdded: wonDeals.filter((d) => d.expectedClose.startsWith("2026-02")).length, valueAdded: fmtVal(wonMtdTotal), valueDelta: "+21%", positive: true },
 ];
