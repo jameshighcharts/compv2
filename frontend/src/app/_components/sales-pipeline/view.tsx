@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DashboardHighchart, createBaseChartOptions } from "@/components/ui/highcharts";
 import { HighchartsGridPro } from "@/components/ui/highcharts-grid-pro";
 
-import { funnelSeries, pipelineDeals, salesPipelineKpis, wonDeals } from "./data";
+import { allBubblePoints, BubblePoint, FUNNEL_STAGE_COLORS, MAX_DEAL_SIZE, pipelineDeals, salesPipelineKpis, wonDeals } from "./data";
 import { ArrKpiCard } from "../dashboard-one/cards";
 
 // ─── Grid options ─────────────────────────────────────────────────────────────
@@ -82,7 +82,7 @@ function buildWonGridOptions() {
 function buildPipelineGridOptions() {
   return {
     accessibility: { enabled: false },
-    pagination: { enabled: false },
+    pagination: { enabled: true },
     rendering: {
       theme: "hcg-theme-default",
       rows: {
@@ -190,7 +190,9 @@ function funnelBoundAtX(dataX: number): number {
   return 4.5 - 3.0 * t;
 }
 
-function buildFunnelChartOptions(): Highcharts.Options {
+function buildFunnelChartOptions(
+  series: Array<{ name: string; color: string; data: BubblePoint[] }>,
+): Highcharts.Options {
   return createBaseChartOptions({
     chart: {
       type: "bubble",
@@ -302,8 +304,8 @@ function buildFunnelChartOptions(): Highcharts.Options {
     },
     plotOptions: {
       bubble: {
-        minSize: "10%",
-        maxSize: "18%",
+        minSize: "4%",
+        maxSize: "11%",
         zMin: 25000,
         zMax: 500000,
         opacity: 0.82,
@@ -320,7 +322,7 @@ function buildFunnelChartOptions(): Highcharts.Options {
       useHTML: true,
       formatter: function () {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const p = this.point as any;
+        const p = this as any;
         const sizeK = `$${Math.round((p.z as number) / 1000)}K`;
         return `
           <div style="padding:4px 2px;min-width:140px">
@@ -332,7 +334,7 @@ function buildFunnelChartOptions(): Highcharts.Options {
           </div>`;
       },
     },
-    series: funnelSeries.map((s) => ({
+    series: series.map((s) => ({
       type: "bubble" as const,
       name: s.name,
       color: s.color,
@@ -351,9 +353,26 @@ function buildFunnelChartOptions(): Highcharts.Options {
 // ─── View ─────────────────────────────────────────────────────────────────────
 
 export function SalesPipelineView() {
+  const [minDealSize, setMinDealSize] = React.useState(0);
+
   const wonGridOptions      = React.useMemo(() => buildWonGridOptions(),      []);
   const pipelineGridOptions = React.useMemo(() => buildPipelineGridOptions(), []);
-  const funnelChartOptions  = React.useMemo(() => buildFunnelChartOptions(),  []);
+
+  const filteredFunnelSeries = React.useMemo(() => {
+    const pts = minDealSize > 0 ? allBubblePoints.filter((p) => p.z >= minDealSize) : allBubblePoints;
+    return (["Scoping", "Proposal", "Committed", "Won"] as const).map((stage) => ({
+      name: stage,
+      color: FUNNEL_STAGE_COLORS[stage],
+      data: pts.filter((p) => p.stage === stage),
+    }));
+  }, [minDealSize]);
+
+  const visibleCount = minDealSize > 0 ? allBubblePoints.filter((p) => p.z >= minDealSize).length : allBubblePoints.length;
+
+  const funnelChartOptions = React.useMemo(
+    () => buildFunnelChartOptions(filteredFunnelSeries),
+    [filteredFunnelSeries],
+  );
 
   return (
     <div className="space-y-5">
@@ -383,6 +402,27 @@ export function SalesPipelineView() {
           <CardTitle className="text-base">Pipeline Funnel</CardTitle>
           <CardDescription>Deal size and volume across pipeline stages</CardDescription>
         </CardHeader>
+
+        {/* Deal-size slider */}
+        <div className="flex items-center gap-3 px-5 pb-3 border-b border-border/40">
+          <span className="text-xs text-muted-foreground whitespace-nowrap">Min deal size</span>
+          <input
+            type="range"
+            min={0}
+            max={MAX_DEAL_SIZE}
+            step={10000}
+            value={minDealSize}
+            onChange={(e) => setMinDealSize(Number(e.target.value))}
+            className="flex-1 h-1.5 accent-primary cursor-pointer"
+          />
+          <span className="text-xs font-semibold tabular-nums w-16 text-right">
+            {minDealSize === 0 ? "All sizes" : `≥ $${Math.round(minDealSize / 1000)}K`}
+          </span>
+          <span className="text-xs text-muted-foreground tabular-nums w-14 text-right">
+            {visibleCount} deal{visibleCount !== 1 ? "s" : ""}
+          </span>
+        </div>
+
         <CardContent className="p-4 pt-0">
           <DashboardHighchart
             options={funnelChartOptions}
