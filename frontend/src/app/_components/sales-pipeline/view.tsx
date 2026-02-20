@@ -5,8 +5,9 @@ import * as React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardHighchart, createBaseChartOptions } from "@/components/ui/highcharts";
 import { HighchartsGridPro } from "@/components/ui/highcharts-grid-pro";
+import { Slider } from "@/components/ui/slider";
 
-import { allBubblePoints, BubblePoint, FUNNEL_STAGE_COLORS, MAX_DEAL_SIZE, pipelineDeals, salesPipelineKpis, wonDeals } from "./data";
+import { allBubblePoints, allDeals, BubblePoint, COMPANY_INFO, FUNNEL_STAGE_COLORS, MAX_DEAL_SIZE, pipelineDeals, salesPipelineKpis, wonDeals } from "./data";
 import { ArrKpiCard } from "../dashboard-one/cards";
 
 // ─── Grid options ─────────────────────────────────────────────────────────────
@@ -190,8 +191,11 @@ function funnelBoundAtX(dataX: number): number {
   return 4.5 - 3.0 * t;
 }
 
+type SelectedPoint = { name: string; stage: string; probability: number; z: number };
+
 function buildFunnelChartOptions(
   series: Array<{ name: string; color: string; data: BubblePoint[] }>,
+  onPointClick: (pt: SelectedPoint) => void,
 ): Highcharts.Options {
   return createBaseChartOptions({
     chart: {
@@ -316,6 +320,21 @@ function buildFunnelChartOptions(
       },
       series: {
         animation: false,
+        cursor: "pointer",
+        point: {
+          events: {
+            click: function () {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const p = this as any;
+              onPointClick({
+                name: p.name as string,
+                stage: p.stage as string,
+                probability: p.probability as number,
+                z: p.z as number,
+              });
+            },
+          },
+        },
       },
     },
     tooltip: {
@@ -353,7 +372,8 @@ function buildFunnelChartOptions(
 // ─── View ─────────────────────────────────────────────────────────────────────
 
 export function SalesPipelineView() {
-  const [minDealSize, setMinDealSize] = React.useState(0);
+  const [minDealSize, setMinDealSize]     = React.useState(0);
+  const [selectedPoint, setSelectedPoint] = React.useState<SelectedPoint | null>(null);
 
   const wonGridOptions      = React.useMemo(() => buildWonGridOptions(),      []);
   const pipelineGridOptions = React.useMemo(() => buildPipelineGridOptions(), []);
@@ -369,12 +389,15 @@ export function SalesPipelineView() {
 
   const visibleCount = minDealSize > 0 ? allBubblePoints.filter((p) => p.z >= minDealSize).length : allBubblePoints.length;
 
+  const handleBubbleClick = React.useCallback((pt: SelectedPoint) => setSelectedPoint(pt), []);
+
   const funnelChartOptions = React.useMemo(
-    () => buildFunnelChartOptions(filteredFunnelSeries),
-    [filteredFunnelSeries],
+    () => buildFunnelChartOptions(filteredFunnelSeries, handleBubbleClick),
+    [filteredFunnelSeries, handleBubbleClick],
   );
 
   return (
+    <>
     <div className="space-y-5">
       {/* Header */}
       <div>
@@ -398,30 +421,29 @@ export function SalesPipelineView() {
 
       {/* Funnel-bubble chart */}
       <Card className="gap-0 py-0">
-        <CardHeader className="p-5 pb-2">
-          <CardTitle className="text-base">Pipeline Funnel</CardTitle>
-          <CardDescription>Deal size and volume across pipeline stages</CardDescription>
+        <CardHeader className="flex flex-row items-start justify-between gap-4 p-5 pb-3">
+          <div>
+            <CardTitle className="text-base">Pipeline Funnel</CardTitle>
+            <CardDescription>Deal size and volume across pipeline stages</CardDescription>
+          </div>
+          <div className="flex flex-col items-end gap-1.5 min-w-[180px]">
+            <div className="flex items-center justify-between w-full gap-2">
+              <span className="text-xs text-muted-foreground whitespace-nowrap">Min deal size</span>
+              <span className="text-xs font-semibold tabular-nums text-right">
+                {minDealSize === 0 ? "All" : `≥ $${Math.round(minDealSize / 1000)}K`}
+                <span className="ml-1.5 text-muted-foreground font-normal">· {visibleCount} deal{visibleCount !== 1 ? "s" : ""}</span>
+              </span>
+            </div>
+            <Slider
+              min={0}
+              max={MAX_DEAL_SIZE}
+              step={10000}
+              value={[minDealSize]}
+              onValueChange={([v]) => setMinDealSize(v)}
+              className="w-full"
+            />
+          </div>
         </CardHeader>
-
-        {/* Deal-size slider */}
-        <div className="flex items-center gap-3 px-5 pb-3 border-b border-border/40">
-          <span className="text-xs text-muted-foreground whitespace-nowrap">Min deal size</span>
-          <input
-            type="range"
-            min={0}
-            max={MAX_DEAL_SIZE}
-            step={10000}
-            value={minDealSize}
-            onChange={(e) => setMinDealSize(Number(e.target.value))}
-            className="flex-1 h-1.5 accent-primary cursor-pointer"
-          />
-          <span className="text-xs font-semibold tabular-nums w-16 text-right">
-            {minDealSize === 0 ? "All sizes" : `≥ $${Math.round(minDealSize / 1000)}K`}
-          </span>
-          <span className="text-xs text-muted-foreground tabular-nums w-14 text-right">
-            {visibleCount} deal{visibleCount !== 1 ? "s" : ""}
-          </span>
-        </div>
 
         <CardContent className="p-4 pt-0">
           <DashboardHighchart
@@ -462,5 +484,75 @@ export function SalesPipelineView() {
         </Card>
       </div>
     </div>
+
+    {/* ── Company detail popup ─────────────────────────────────────────────── */}
+    {selectedPoint && (() => {
+      const info = COMPANY_INFO[selectedPoint.name];
+      const deal = allDeals.find((d) => d.company === selectedPoint.name);
+      if (!info || !deal) return null;
+      const stageCls =
+        selectedPoint.stage === "Scoping"   ? "sp-stage-scoping"   :
+        selectedPoint.stage === "Proposal"  ? "sp-stage-proposal"  :
+        selectedPoint.stage === "Committed" ? "sp-stage-committed" : "sp-stage-won";
+
+      return (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          onClick={() => setSelectedPoint(null)}
+        >
+          <div
+            className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-[440px] mx-4 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between p-6 pb-4">
+              <div className="space-y-1.5">
+                <h3 className="text-xl font-bold tracking-tight leading-none">{selectedPoint.name}</h3>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs bg-primary/10 text-primary px-2.5 py-0.5 rounded-full font-medium">
+                    {info.industry}
+                  </span>
+                  <span className={`sp-stage-badge ${stageCls} text-xs`}>
+                    {selectedPoint.stage}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedPoint(null)}
+                className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted transition-colors ml-3 shrink-0"
+                aria-label="Close"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+              </button>
+            </div>
+
+            {/* Description */}
+            <p className="text-sm text-muted-foreground leading-relaxed px-6 pb-5">
+              {info.description}
+            </p>
+
+            {/* Stats grid */}
+            <div className="grid grid-cols-3 gap-px bg-border mx-6 mb-5 rounded-xl overflow-hidden">
+              {[
+                { label: "Deal Size",    value: `$${Math.round(selectedPoint.z / 1000)}K` },
+                { label: "Probability",  value: `${selectedPoint.probability}%` },
+                { label: "Employees",    value: info.employees },
+                { label: "Company ARR",  value: info.yearlyRevenue },
+                { label: "Contact",      value: deal.contact },
+                { label: "Exp. Close",   value: deal.expectedClose },
+              ].map(({ label, value }) => (
+                <div key={label} className="bg-card px-3 py-3">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">{label}</p>
+                  <p className="text-sm font-semibold leading-tight">{value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    })()}
+    </>
   );
 }

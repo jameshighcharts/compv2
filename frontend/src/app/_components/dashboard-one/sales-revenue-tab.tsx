@@ -157,8 +157,8 @@ export function DashboardSalesRevenueTab() {
     () =>
       buildSalesRevenueBarOptions(licenseOwnersBarData.series, [
         chartColor(0),
-        chartColor(1),
         chartColor(2),
+        chartColor(1),
         chartColor(3),
       ], licenseOwnersBarData.expected),
     [],
@@ -168,8 +168,8 @@ export function DashboardSalesRevenueTab() {
     () =>
       buildSalesRevenueBarOptions(directRevenueBarData.series, [
         chartColor(0),
-        chartColor(1),
         chartColor(2),
+        chartColor(1),
       ], directRevenueBarData.expected),
     [],
   );
@@ -178,8 +178,8 @@ export function DashboardSalesRevenueTab() {
     () =>
       buildSalesRevenueBarOptions(totalRevenueBarData.series, [
         chartColor(0),
-        chartColor(1),
         chartColor(2),
+        chartColor(1),
         chartColor(3),
       ], totalRevenueBarData.expected),
     [],
@@ -189,8 +189,8 @@ export function DashboardSalesRevenueTab() {
     () =>
       buildSalesRevenueBarOptions(channelPartnerBarData.series, [
         chartColor(0),
-        chartColor(1),
         chartColor(2),
+        chartColor(1),
       ], channelPartnerBarData.expected),
     [],
   );
