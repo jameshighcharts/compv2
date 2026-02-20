@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import {
   IconBug,
+  IconChartFunnel,
   IconChecklist,
   IconCode,
   IconLayoutDashboard,
@@ -33,6 +34,11 @@ export const navGeneral: SidebarNavItem[] = [
       { title: "Dashboard 2", href: "/dashboard-2" },
       { title: "Dashboard 3", href: "/dashboard-3" },
     ],
+  },
+  {
+    title: "Sales Pipeline",
+    href: "/sales-pipeline",
+    icon: IconChartFunnel,
   },
   {
     title: "Adhocs & Tasks",

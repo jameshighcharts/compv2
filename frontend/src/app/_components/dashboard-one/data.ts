@@ -197,8 +197,8 @@ export const channelPartnerBarData = {
 export const srGaugeTargets = { base: 10, budget: 12, high: 14, max: 16 };
 
 export const srGaugeItems = [
-  { title: "Sales This Month", value: 11.5, previous: 9.5, label: "$11.5M", subtitle: "Target: $12M" },
-  { title: "Sales Year to Date", value: 13.2, previous: 11, label: "$13.2M", subtitle: "Target: $14M" },
+  { title: "Sales This Month", value: 11.5, previous: 9.5, label: "$11.5M", subtitle: "Target: $12M", target: 12 },
+  { title: "Sales Year to Date", value: 13.2, previous: 11, label: "$13.2M", subtitle: "Target: $14M", target: 14 },
 ];
 
 export const reportFiles = [

@@ -229,3 +229,95 @@
   background-color: color-mix(in srgb, #ef4444 12%, transparent);
   color: #ef4444;
 }
+
+/* ─── Sales Pipeline grid ──────────────────────────────────────────────────── */
+
+.sp-pipeline-grid .hcg-container {
+  --hcg-border-width: 0;
+  --hcg-padding: 0;
+  --hcg-header-vertical-padding: 10px;
+  --hcg-header-horizontal-padding: 20px;
+  --hcg-vertical-padding: 13px;
+  --hcg-horizontal-padding: 20px;
+  --hcg-font-size: 14px;
+  --hcg-header-font-size: 13px;
+  --hcg-header-font-weight: 500;
+  --hcg-row-border-color: var(--border);
+  --hcg-header-row-border-color: var(--border);
+  --hcg-row-even-background: transparent;
+  --hcg-row-hover-background: color-mix(in srgb, var(--accent) 55%, transparent);
+  --hcg-header-color: var(--muted-foreground);
+  --hcg-color: var(--foreground);
+  --hcg-background: transparent;
+}
+
+.sp-pipeline-grid .hcg-table th,
+.sp-pipeline-grid .hcg-table td {
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.sp-pipeline-grid .sp-grid-cell {
+  color: var(--foreground);
+}
+
+.sp-pipeline-grid .sp-meta-cell {
+  color: var(--muted-foreground);
+}
+
+.sp-pipeline-grid .sp-amount-cell {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Stage badge */
+.sp-pipeline-grid .sp-stage-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  padding: 3px 10px;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.sp-pipeline-grid .sp-stage-scoping {
+  border-color: color-mix(in srgb, #6366f1 28%, transparent);
+  background-color: color-mix(in srgb, #6366f1 10%, transparent);
+  color: #6366f1;
+}
+
+.sp-pipeline-grid .sp-stage-proposal {
+  border-color: color-mix(in srgb, #f97316 28%, transparent);
+  background-color: color-mix(in srgb, #f97316 10%, transparent);
+  color: #ea580c;
+}
+
+.sp-pipeline-grid .sp-stage-committed {
+  border-color: color-mix(in srgb, #10b981 28%, transparent);
+  background-color: color-mix(in srgb, #10b981 10%, transparent);
+  color: #059669;
+}
+
+.sp-pipeline-grid .sp-stage-won {
+  border-color: color-mix(in srgb, #10b981 30%, transparent);
+  background-color: color-mix(in srgb, #10b981 12%, transparent);
+  color: #059669;
+}
+
+/* Won deal text accent (used in Latest Sales grid) */
+.sp-pipeline-grid .sp-stage-won-text {
+  color: #059669;
+  font-weight: 600;
+}
+
+/* Large deal highlight (> $200K) */
+.sp-pipeline-grid .sp-deal-large {
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+/* Probability color coding */
+.sp-pipeline-grid .sp-prob-high   { color: #059669; font-weight: 600; }
+.sp-pipeline-grid .sp-prob-medium { color: #d97706; font-weight: 600; }
+.sp-pipeline-grid .sp-prob-low    { color: #ef4444; font-weight: 600; }

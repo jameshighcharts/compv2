@@ -60,7 +60,6 @@ const buildSalesRevenueBarOptions = (
   });
 
 const buildGaugeOptions = (value: number, previous: number, label: string) => {
-  const targetPct = Math.round((value / srGaugeTargets.budget) * 100);
   return {
     chart: {
       type: "gauge",
@@ -142,16 +141,11 @@ const buildGaugeOptions = (value: number, previous: number, label: string) => {
           enabled: true,
           y: 10,
           useHTML: true,
-          crop: false,
-          overflow: "allow",
           borderWidth: 0,
           backgroundColor: "transparent",
           style: { textOutline: "none" },
           formatter: () =>
-            `<div style="text-align:center;line-height:1.3">` +
-            `<span style="font-size:28px;font-weight:700">${label}</span><br/>` +
-            `<span style="font-size:14px;opacity:0.6">${targetPct}% of $${srGaugeTargets.budget}M target reached</span>` +
-            `</div>`,
+            `<div style="text-align:center"><span style="font-size:28px;font-weight:700">${label}</span></div>`,
         },
       },
     ],
@@ -237,82 +231,92 @@ export function DashboardSalesRevenueTab() {
         ))}
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        <div className="col-span-2 grid grid-cols-2 gap-4">
-          <Card className="gap-0 py-0">
-            <CardHeader className="flex flex-row items-center justify-between p-4 pb-0">
-              <CardTitle className="text-base font-semibold">License Owners</CardTitle>
-              <span className={`text-sm font-bold ${licenseOwnersBarData.positive ? "text-emerald-500" : "text-red-500"}`}>
-                {licenseOwnersBarData.badge}
-              </span>
-            </CardHeader>
-            <CardContent className="p-2">
-              <DashboardHighchart options={licenseOwnerOpts} className="h-[290px] w-full" />
-            </CardContent>
-          </Card>
-
-          <Card className="gap-0 py-0">
-            <CardHeader className="flex flex-row items-center justify-between p-4 pb-0">
-              <CardTitle className="text-base font-semibold">Direct Revenue</CardTitle>
-              <span className={`text-sm font-bold ${directRevenueBarData.positive ? "text-emerald-500" : "text-red-500"}`}>
-                {directRevenueBarData.badge}
-              </span>
-            </CardHeader>
-            <CardContent className="p-2">
-              <DashboardHighchart options={directRevenueOpts} className="h-[290px] w-full" />
-            </CardContent>
-          </Card>
-
-          <Card className="gap-0 py-0">
-            <CardHeader className="flex flex-row items-center justify-between p-4 pb-0">
-              <CardTitle className="text-base font-semibold">Total Revenue</CardTitle>
-              <span className={`text-sm font-bold ${totalRevenueBarData.positive ? "text-emerald-500" : "text-red-500"}`}>
-                {totalRevenueBarData.badge}
-              </span>
-            </CardHeader>
-            <CardContent className="p-2">
-              <DashboardHighchart options={totalRevenueOpts} className="h-[290px] w-full" />
-            </CardContent>
-          </Card>
-
-          <Card className="gap-0 py-0">
-            <CardHeader className="flex flex-row items-center justify-between p-4 pb-0">
-              <CardTitle className="text-base font-semibold">Channel Partner Revenue</CardTitle>
-              <span className={`text-sm font-bold ${channelPartnerBarData.positive ? "text-emerald-500" : "text-red-500"}`}>
-                {channelPartnerBarData.badge}
-              </span>
-            </CardHeader>
-            <CardContent className="p-2">
-              <DashboardHighchart options={channelPartnerOpts} className="h-[290px] w-full" />
-            </CardContent>
-          </Card>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="flex flex-1 flex-col rounded-2xl border bg-card px-5 pb-3 pt-4 shadow-sm">
+          <p className="text-sm font-semibold text-foreground">{srGaugeItems[0].title}</p>
+          <DashboardHighchart options={srGauge0Opts} className="h-[250px] w-full" />
+          <div className="mt-0.5 flex justify-center gap-4 text-[11px] text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-[2px] w-4 rounded-full bg-slate-500" />
+              Current
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-[2px] w-4 rounded-full bg-slate-400 opacity-40" />
+              Previous
+            </span>
+          </div>
+          <p className="mt-1 text-center text-[11px] font-medium text-foreground">
+            {Math.round((srGaugeItems[0].value / srGaugeItems[0].target) * 100)}% of target reached
+          </p>
+          <p className="mt-0.5 text-center text-[11px] text-muted-foreground">{srGaugeItems[0].subtitle}</p>
         </div>
 
-        <div className="col-span-1 flex flex-col gap-4">
-          {srGaugeItems.map((item, index) => (
-            <div
-              key={item.title}
-              className="flex flex-1 flex-col rounded-2xl border bg-card px-5 pb-3 pt-4 shadow-sm"
-            >
-              <p className="text-sm font-semibold text-foreground">{item.title}</p>
-              <DashboardHighchart
-                options={index === 0 ? srGauge0Opts : srGauge1Opts}
-                className="h-[250px] w-full"
-              />
-              <div className="mt-0.5 flex justify-center gap-4 text-[11px] text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <span className="inline-block h-[2px] w-4 rounded-full bg-slate-500" />
-                  Current
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="inline-block h-[2px] w-4 rounded-full bg-slate-400 opacity-40" />
-                  Previous
-                </span>
-              </div>
-              <p className="mt-1 text-center text-[11px] text-muted-foreground">{item.subtitle}</p>
-            </div>
-          ))}
+        <Card className="gap-0 py-0">
+          <CardHeader className="flex flex-row items-center justify-between p-4 pb-0">
+            <CardTitle className="text-base font-semibold">License Owners</CardTitle>
+            <span className={`text-sm font-bold ${licenseOwnersBarData.positive ? "text-emerald-500" : "text-red-500"}`}>
+              {licenseOwnersBarData.badge}
+            </span>
+          </CardHeader>
+          <CardContent className="p-2">
+            <DashboardHighchart options={licenseOwnerOpts} className="h-[290px] w-full" />
+          </CardContent>
+        </Card>
+
+        <Card className="gap-0 py-0">
+          <CardHeader className="flex flex-row items-center justify-between p-4 pb-0">
+            <CardTitle className="text-base font-semibold">Direct Revenue</CardTitle>
+            <span className={`text-sm font-bold ${directRevenueBarData.positive ? "text-emerald-500" : "text-red-500"}`}>
+              {directRevenueBarData.badge}
+            </span>
+          </CardHeader>
+          <CardContent className="p-2">
+            <DashboardHighchart options={directRevenueOpts} className="h-[290px] w-full" />
+          </CardContent>
+        </Card>
+
+        <div className="flex flex-1 flex-col rounded-2xl border bg-card px-5 pb-3 pt-4 shadow-sm">
+          <p className="text-sm font-semibold text-foreground">{srGaugeItems[1].title}</p>
+          <DashboardHighchart options={srGauge1Opts} className="h-[250px] w-full" />
+          <div className="mt-0.5 flex justify-center gap-4 text-[11px] text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-[2px] w-4 rounded-full bg-slate-500" />
+              Current
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-[2px] w-4 rounded-full bg-slate-400 opacity-40" />
+              Previous
+            </span>
+          </div>
+          <p className="mt-1 text-center text-[11px] font-medium text-foreground">
+            {Math.round((srGaugeItems[1].value / srGaugeItems[1].target) * 100)}% of target reached
+          </p>
+          <p className="mt-0.5 text-center text-[11px] text-muted-foreground">{srGaugeItems[1].subtitle}</p>
         </div>
+
+        <Card className="gap-0 py-0">
+          <CardHeader className="flex flex-row items-center justify-between p-4 pb-0">
+            <CardTitle className="text-base font-semibold">Total Revenue</CardTitle>
+            <span className={`text-sm font-bold ${totalRevenueBarData.positive ? "text-emerald-500" : "text-red-500"}`}>
+              {totalRevenueBarData.badge}
+            </span>
+          </CardHeader>
+          <CardContent className="p-2">
+            <DashboardHighchart options={totalRevenueOpts} className="h-[290px] w-full" />
+          </CardContent>
+        </Card>
+
+        <Card className="gap-0 py-0">
+          <CardHeader className="flex flex-row items-center justify-between p-4 pb-0">
+            <CardTitle className="text-base font-semibold">Channel Partner Revenue</CardTitle>
+            <span className={`text-sm font-bold ${channelPartnerBarData.positive ? "text-emerald-500" : "text-red-500"}`}>
+              {channelPartnerBarData.badge}
+            </span>
+          </CardHeader>
+          <CardContent className="p-2">
+            <DashboardHighchart options={channelPartnerOpts} className="h-[290px] w-full" />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

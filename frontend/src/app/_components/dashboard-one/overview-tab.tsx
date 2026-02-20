@@ -2,6 +2,7 @@
 
 import * as React from "react";
 
+import Highcharts from "@/lib/highcharts-init";
 import { DashboardHighchart, chartColor, createBaseChartOptions, mergeSeriesColors } from "@/components/ui/highcharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -13,54 +14,72 @@ export function DashboardOverviewTab() {
     () =>
       createBaseChartOptions({
         chart: {
-          type: "line",
+          type: "areaspline",
           height: 300,
-          spacing: [12, 6, 0, 4],
+          spacing: [12, 6, 8, 4],
         },
         legend: {
           enabled: true,
           align: "left",
           verticalAlign: "top",
           layout: "horizontal",
+          itemStyle: { fontWeight: "500", fontSize: "12px" },
         },
         xAxis: {
           categories: arrRevenueBreakdownData.map((point) => point.month),
           tickLength: 0,
+          lineWidth: 0,
+          labels: { style: { fontSize: "12px" } },
         },
         yAxis: {
-          title: {
-            text: undefined,
-          },
-          labels: {
-            format: "${value}k",
-          },
-          gridLineDashStyle: "Dash",
+          title: { text: undefined },
+          labels: { format: "${value}k", style: { fontSize: "12px" } },
+          gridLineWidth: 0,
         },
         tooltip: {
           shared: true,
+          backgroundColor: "var(--popover)",
+          borderWidth: 0,
+          borderRadius: 8,
+          shadow: false,
+          style: { color: "var(--popover-foreground)" },
           pointFormat:
             '<span style="color:{series.color}">\u25CF</span> {series.name}: <b>${point.y:,.0f}k</b><br/>',
         },
         plotOptions: {
+          areaspline: {
+            lineWidth: 1.5,
+            marker: { enabled: false },
+          },
           series: {
             animation: false,
-            marker: {
-              enabled: false,
-            },
-            lineWidth: 3,
           },
         },
         series: mergeSeriesColors(
           [
             {
-              type: "line",
+              type: "areaspline" as const,
               name: "Annual ARR",
               data: arrRevenueBreakdownData.map((point) => point.annual),
+              fillColor: {
+                linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+                stops: [
+                  [0, "rgba(128,135,232,0.38)"],
+                  [1, "rgba(128,135,232,0)"],
+                ],
+              } as Highcharts.GradientColorObject,
             },
             {
-              type: "line",
+              type: "areaspline" as const,
               name: "ADV ARR",
               data: arrRevenueBreakdownData.map((point) => point.adv),
+              fillColor: {
+                linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+                stops: [
+                  [0, "rgba(241,158,83,0.38)"],
+                  [1, "rgba(241,158,83,0)"],
+                ],
+              } as Highcharts.GradientColorObject,
             },
           ],
           [chartColor(0), chartColor(2)],
