@@ -22,6 +22,7 @@ export type SidebarNavItem = {
   subItems?: SidebarSubItem[];
   defaultOpen?: boolean;
   collapsible?: boolean;
+  hidden?: boolean;
 };
 
 export const navGeneral: SidebarNavItem[] = [
@@ -30,8 +31,8 @@ export const navGeneral: SidebarNavItem[] = [
     icon: IconLayoutDashboard,
     defaultOpen: true,
     subItems: [
-      { title: "Dashboard 1", href: "/" },
-      { title: "Dashboard 2", href: "/dashboard-2" },
+      { title: "Sales", href: "/" },
+      { title: "Marketing", href: "/dashboard-2" },
       { title: "Dashboard 3", href: "/dashboard-3" },
     ],
   },
@@ -57,11 +58,11 @@ export const navGeneral: SidebarNavItem[] = [
 ];
 
 export const navPages: SidebarNavItem[] = [
-  { title: "Auth", icon: IconLockAccess, collapsible: true },
-  { title: "Errors", icon: IconBug, collapsible: true },
+  { title: "Auth", icon: IconLockAccess, collapsible: true, hidden: true },
+  { title: "Errors", icon: IconBug, collapsible: true, hidden: true },
 ];
 
 export const navOther: SidebarNavItem[] = [
-  { title: "Settings", icon: IconSettings, collapsible: true },
-  { title: "Developers", icon: IconCode, collapsible: true },
+  { title: "Settings", icon: IconSettings, collapsible: true, hidden: true },
+  { title: "Developers", icon: IconCode, collapsible: true, hidden: true },
 ];

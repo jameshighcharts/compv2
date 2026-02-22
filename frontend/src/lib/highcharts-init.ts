@@ -1,18 +1,23 @@
 import Highcharts from "highcharts/esm/highcharts.src.js";
 
-const HIGHCHARTS_MORE_FLAG = "__highcharts_more_initialized__";
+// Bump this key whenever new modules are added to force a fresh load
+const MODULES_FLAG = "__hc_modules_v3__";
 
 const globalWithFlag = globalThis as typeof globalThis & {
-  [HIGHCHARTS_MORE_FLAG]?: boolean;
+  [MODULES_FLAG]?: boolean;
 };
 
 export const ensureHighchartsModules = async (): Promise<void> => {
-  if (typeof window === "undefined" || globalWithFlag[HIGHCHARTS_MORE_FLAG]) {
+  if (typeof window === "undefined" || globalWithFlag[MODULES_FLAG]) {
     return;
   }
 
-  await import("highcharts/esm/highcharts-more.src.js");
-  globalWithFlag[HIGHCHARTS_MORE_FLAG] = true;
+  await Promise.all([
+    import("highcharts/esm/highcharts-more.src.js"),
+    import("highcharts/esm/modules/funnel.src.js"),
+  ]);
+
+  globalWithFlag[MODULES_FLAG] = true;
 };
 
 export default Highcharts;

@@ -11,12 +11,14 @@ export type DashboardHighchartProps = {
   options: Highcharts.Options;
 };
 
+// Palette matching globals.css --chart-* tokens.
+// These are the dark-mode-optimised values; they render acceptably in light mode too.
 export const CHART_PALETTE = [
-  "#8087E8",
-  "#A3EDBA",
-  "#F19E53",
-  "#6699A1",
-  "#E1D369",
+  "#9198F0", // violet  — chart-1
+  "#6DDFA0", // mint    — chart-2
+  "#F7A85E", // orange  — chart-3
+  "#7DBFCE", // teal    — chart-4
+  "#EBD95F", // yellow  — chart-5
 ] as const;
 
 export const chartColor = (index: number): string => {
@@ -51,26 +53,36 @@ const BASE_OPTIONS: Highcharts.Options = {
     itemStyle: {
       color: "var(--muted-foreground)",
       fontWeight: "500",
+      fontSize: "12px",
     },
     itemHoverStyle: {
       color: "var(--foreground)",
     },
+    // Tighter item spacing — less cluttered legends
+    itemDistance: 16,
   },
   tooltip: {
     backgroundColor: "var(--card)",
     borderColor: "var(--border)",
+    // Crisp shadow-less tooltip that matches card aesthetic
+    borderRadius: 8,
+    shadow: false,
     style: {
       color: "var(--foreground)",
+      fontSize: "13px",
     },
+    padding: 10,
   },
   xAxis: {
     labels: {
       style: {
         color: "var(--muted-foreground)",
+        fontSize: "12px",
       },
     },
-    lineColor: "var(--border)",
-    tickColor: "var(--border)",
+    // Remove the x-axis baseline and tick marks — reduces visual noise
+    lineColor: "transparent",
+    tickColor: "transparent",
   },
   yAxis: {
     title: {
@@ -79,9 +91,12 @@ const BASE_OPTIONS: Highcharts.Options = {
     labels: {
       style: {
         color: "var(--muted-foreground)",
+        fontSize: "12px",
       },
     },
+    // Dot grid lines are softer and less distracting than solid
     gridLineColor: "var(--border)",
+    gridLineDashStyle: "Dot",
   },
 };
 

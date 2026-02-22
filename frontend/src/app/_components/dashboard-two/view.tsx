@@ -1,11 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { IconFileDescription, IconFilter } from "@tabler/icons-react";
-import { TrendingUp } from "lucide-react";
+import { IconFileDescription } from "@tabler/icons-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -13,344 +12,568 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import Highcharts from "@/lib/highcharts-init";
 import { DashboardHighchart, chartColor, createBaseChartOptions, mergeSeriesColors } from "@/components/ui/highcharts";
 import { HighchartsGridPro } from "@/components/ui/highcharts-grid-pro";
 
 import { DashboardTwoStatCard } from "./cards";
-import { formatInteger, recentActivity, revenueData, statCards, totalVisitors, visitorData } from "./data";
+import {
+  statCards,
+  trafficWeekLabels,
+  trafficOrganic, trafficDirect, trafficPaid, trafficReferral, trafficSocial,
+  channelMixData, totalSessions,
+  saasFlowFunnel, funnelConvRates,
+  campaignLabels, campaignConversions, campaignCTR,
+  campaignRows,
+  geoData,
+  conversionMonths, trialSignups, paidConversions,
+  fmtK,
+} from "./data";
 
 export function DashboardTwoView() {
-  const revenueChartOptions = React.useMemo(
+
+  // ── 1. Traffic Acquisition — stacked area, 5 channels ──────────────────────
+  const trafficChartOptions = React.useMemo(
     () =>
       createBaseChartOptions({
-        chart: {
-          type: "column",
-          height: 250,
-        },
+        chart: { type: "area", height: 280 },
         xAxis: {
-          categories: revenueData.map((item) => item.month),
+          categories: trafficWeekLabels,
           tickLength: 0,
+          labels: { style: { fontSize: "11px" } },
         },
         yAxis: {
-          title: {
-            text: undefined,
+          title: { text: "" },
+          gridLineDashStyle: "Dot",
+          labels: {
+            formatter: function () {
+              return fmtK(Number((this as { value: number }).value));
+            },
+            style: { fontSize: "11px" },
           },
-          gridLineDashStyle: "Dash",
         },
-        tooltip: {
-          shared: true,
-        },
-        legend: {
-          enabled: true,
-        },
+        tooltip: { shared: true, valueSuffix: " sessions" },
+        legend: { enabled: true, itemStyle: { fontSize: "12px" } },
         plotOptions: {
-          series: {
-            animation: false,
+          area: {
+            stacking: "normal",
+            lineWidth: 0.5,
+            marker: { enabled: false },
+            fillOpacity: 0.6,
           },
-          column: {
-            borderWidth: 0,
-            borderRadius: 4,
-          },
+          series: { animation: false },
         },
         series: mergeSeriesColors(
           [
-            {
-              type: "column",
-              name: "Desktop",
-              data: revenueData.map((item) => item.desktop),
-            },
-            {
-              type: "column",
-              name: "Mobile",
-              data: revenueData.map((item) => item.mobile),
-            },
+            { type: "area", name: "Organic", data: trafficOrganic },
+            { type: "area", name: "Direct", data: trafficDirect },
+            { type: "area", name: "Paid Search", data: trafficPaid },
+            { type: "area", name: "Referral", data: trafficReferral },
+            { type: "area", name: "Social", data: trafficSocial },
           ],
-          [chartColor(0), chartColor(1)],
+          [chartColor(0), chartColor(1), chartColor(2), chartColor(3), chartColor(4)],
         ),
       }),
     [],
   );
 
-  const visitorChartOptions = React.useMemo(
+  // ── 2. Channel Mix — donut ──────────────────────────────────────────────────
+  const channelDonutOptions = React.useMemo(
     () =>
       createBaseChartOptions({
-        chart: {
-          type: "pie",
-          height: 250,
-        },
+        chart: { type: "pie", height: 240 },
         title: {
-          text: formatInteger(totalVisitors),
+          text: fmtK(totalSessions),
           align: "center",
           verticalAlign: "middle",
-          y: 10,
-          style: {
-            color: "var(--foreground)",
-            fontSize: "30px",
-            fontWeight: "700",
-          },
+          y: 8,
+          style: { color: "var(--foreground)", fontSize: "24px", fontWeight: "700" },
         },
         subtitle: {
-          text: "Visitors",
+          text: "Sessions",
           align: "center",
           verticalAlign: "middle",
-          y: 34,
-          style: {
-            color: "var(--muted-foreground)",
-          },
+          y: 32,
+          style: { color: "var(--muted-foreground)", fontSize: "12px" },
         },
         legend: {
-          enabled: false,
+          enabled: true,
+          layout: "horizontal",
+          align: "center",
+          verticalAlign: "bottom",
+          itemStyle: { fontSize: "11px" },
         },
         tooltip: {
-          pointFormat: "<b>{point.y}</b>",
+          pointFormat: "<b>{point.y:,.0f}</b> ({point.percentage:.1f}%)",
         },
         plotOptions: {
-          series: {
-            animation: false,
-          },
+          series: { animation: false },
           pie: {
             innerSize: "60%",
-            borderColor: "var(--background)",
-            borderWidth: 5,
+            borderColor: "var(--card)",
+            borderWidth: 4,
+            dataLabels: { enabled: false },
+            showInLegend: true,
+          },
+        },
+        series: [{ type: "pie", name: "Sessions", data: channelMixData }],
+      }),
+    [],
+  );
+
+  // ── 3. SaaS Growth Funnel — Highcharts funnel series ────────────────────────
+  const funnelChartOptions = React.useMemo(
+    () =>
+      createBaseChartOptions({
+        chart: { height: 300 },
+        legend: { enabled: false },
+        tooltip: {
+          formatter: function () {
+            const self = this as { key: unknown; y: unknown };
+            return `<b>${String(self.key)}</b><br/>${fmtK(Number(self.y))} users`;
+          },
+        },
+        plotOptions: {
+          funnel: {
+            width: "58%",
+            neckWidth: "28%",
+            neckHeight: "18%",
             dataLabels: {
-              enabled: false,
+              enabled: true,
+              format:
+                "<span style='font-size:12px;font-weight:600;color:var(--foreground)'>{point.name}</span>"
+                + "<br/><span style='font-size:11px;color:var(--muted-foreground)'>{point.y:,.0f}</span>",
+              softConnector: true,
+              connectorColor: "var(--border)",
+              style: { textOutline: "none" },
             },
           },
+          series: { animation: false },
         },
         series: [
           {
-            type: "pie",
-            name: "Visitors",
-            data: visitorData,
+            type: "funnel",
+            name: "Users",
+            data: saasFlowFunnel.map((s) => ({
+              name: s.name,
+              y: s.y,
+              color: s.color,
+            })),
+          },
+        ] as unknown as Highcharts.SeriesOptionsType[],
+      }),
+    [],
+  );
+
+  // ── 4. Campaign Performance — column + spline combo ─────────────────────────
+  const campaignComboOptions = React.useMemo(
+    () =>
+      createBaseChartOptions({
+        chart: { height: 280 },
+        xAxis: {
+          categories: campaignLabels,
+          tickLength: 0,
+          labels: { style: { fontSize: "10px" } },
+        },
+        yAxis: [
+          {
+            title: { text: "" },
+            gridLineDashStyle: "Dot",
+            labels: { style: { fontSize: "11px" } },
+          },
+          {
+            title: { text: "" },
+            opposite: true,
+            labels: {
+              formatter: function () {
+                return `${(this as { value: number }).value}%`;
+              },
+              style: { fontSize: "11px" },
+            },
+            gridLineWidth: 0,
+          },
+        ],
+        tooltip: { shared: true },
+        legend: { enabled: true, itemStyle: { fontSize: "12px" } },
+        plotOptions: {
+          column: { borderWidth: 0, borderRadius: 4 },
+          series: { animation: false },
+        },
+        series: [
+          {
+            type: "column",
+            name: "Conversions",
+            data: campaignConversions,
+            color: chartColor(0),
+            yAxis: 0,
+          },
+          {
+            type: "spline",
+            name: "CTR %",
+            data: campaignCTR,
+            color: chartColor(2),
+            yAxis: 1,
+            marker: { enabled: true, radius: 4 },
+            lineWidth: 2,
           },
         ],
       }),
     [],
   );
 
-  const recentActivityGridOptions = React.useMemo(
-    () => ({
-      accessibility: {
-        enabled: false,
-      },
-      pagination: {
-        enabled: false,
-      },
-      rendering: {
-        theme: "hcg-theme-default",
-        rows: {
-          strictHeights: true,
-          minVisibleRows: 5,
+  // ── 5. Geographic Distribution — donut ──────────────────────────────────────
+  const geoDonutOptions = React.useMemo(
+    () =>
+      createBaseChartOptions({
+        chart: { type: "pie", height: 240 },
+        title: {
+          text: "Global",
+          align: "center",
+          verticalAlign: "middle",
+          y: 8,
+          style: { color: "var(--foreground)", fontSize: "20px", fontWeight: "700" },
         },
-        columns: {
-          resizing: {
-            enabled: false,
+        subtitle: {
+          text: "Reach",
+          align: "center",
+          verticalAlign: "middle",
+          y: 32,
+          style: { color: "var(--muted-foreground)", fontSize: "12px" },
+        },
+        legend: {
+          enabled: true,
+          layout: "horizontal",
+          align: "center",
+          verticalAlign: "bottom",
+          itemStyle: { fontSize: "11px" },
+        },
+        tooltip: {
+          pointFormat: "<b>{point.percentage:.1f}%</b> of traffic",
+        },
+        plotOptions: {
+          series: { animation: false },
+          pie: {
+            innerSize: "60%",
+            borderColor: "var(--card)",
+            borderWidth: 4,
+            dataLabels: { enabled: false },
+            showInLegend: true,
           },
         },
+        series: [{ type: "pie", name: "Region", data: geoData }],
+      }),
+    [],
+  );
+
+  // ── 6. Trial → Paid — dual-axis line/area ────────────────────────────────────
+  const conversionTrendOptions = React.useMemo(
+    () =>
+      createBaseChartOptions({
+        chart: { height: 260 },
+        xAxis: {
+          categories: conversionMonths,
+          tickLength: 0,
+          labels: { style: { fontSize: "11px" } },
+        },
+        yAxis: [
+          {
+            title: { text: "" },
+            gridLineDashStyle: "Dot",
+            labels: { style: { fontSize: "11px" } },
+          },
+          {
+            title: { text: "" },
+            opposite: true,
+            gridLineWidth: 0,
+            labels: { style: { fontSize: "11px" } },
+          },
+        ],
+        tooltip: { shared: true },
+        legend: { enabled: true, itemStyle: { fontSize: "12px" } },
+        plotOptions: {
+          areaspline: { fillOpacity: 0.12, marker: { enabled: false } },
+          spline: { marker: { enabled: false } },
+          series: { animation: false },
+        },
+        series: [
+          {
+            type: "areaspline",
+            name: "Trial Signups",
+            data: trialSignups,
+            color: chartColor(0),
+            yAxis: 0,
+            lineWidth: 2,
+          },
+          {
+            type: "spline",
+            name: "Paid Conversions",
+            data: paidConversions,
+            color: chartColor(1),
+            yAxis: 1,
+            lineWidth: 2,
+            dashStyle: "Dash",
+          },
+        ],
+      }),
+    [],
+  );
+
+  // ── 7. Active Campaigns — Grid Pro ──────────────────────────────────────────
+  const campaignsGridOptions = React.useMemo(
+    () => ({
+      accessibility: { enabled: false },
+      pagination: { enabled: false },
+      rendering: {
+        theme: "hcg-theme-default",
+        rows: { strictHeights: true, minVisibleRows: 7 },
+        columns: { resizing: { enabled: false } },
       },
-      credits: {
-        enabled: false,
-      },
+      credits: { enabled: false },
       columnDefaults: {
-        sorting: {
-          enabled: false,
-        },
-        cells: {
-          className: "ra-grid-cell",
-        },
+        sorting: { enabled: false },
+        cells: { className: "ra-grid-cell" },
       },
       columns: [
         {
-          id: "user",
-          header: {
-            format: "User",
-          },
-          width: "44%",
-          cells: {
-            className: "ra-grid-cell ra-user-cell",
-            formatter: function () {
-              return String((this as { value?: unknown }).value ?? "");
-            },
-          },
+          id: "name",
+          header: { format: "Campaign" },
+          width: "30%",
+          cells: { className: "ra-grid-cell ra-user-cell" },
         },
         {
-          id: "status",
-          header: {
-            format: "Status",
-          },
-          width: "16%",
+          id: "channel",
+          header: { format: "Channel" },
+          width: "14%",
           cells: {
             className: "ra-grid-cell",
             formatter: function () {
-              const status = String((this as { value?: unknown }).value ?? "");
-              const toneClass =
-                status === "Invited"
-                  ? "ra-status-invited"
-                  : status === "Suspended"
-                    ? "ra-status-suspended"
-                    : status === "Delete"
-                      ? "ra-status-delete"
-                      : "ra-status-new";
-
-              return `<span class="ra-status-badge ${toneClass}">${status}</span>`;
+              const ch = String((this as { value?: unknown }).value ?? "");
+              const colors: Record<string, string> = {
+                "Multi-channel": chartColor(0),
+                "Email":         chartColor(1),
+                "Paid Search":   chartColor(2),
+                "Social":        chartColor(3),
+                "Events":        chartColor(4),
+                "Display":       chartColor(0),
+                "Dev Ads":       chartColor(1),
+              };
+              const c = colors[ch] ?? "#94a3b8";
+              return `<span style="background:${c}20;color:${c};border:1px solid ${c}50;border-radius:9999px;padding:2px 8px;font-size:10px;font-weight:700;white-space:nowrap;">${ch}</span>`;
             },
           },
         },
         {
-          id: "id",
-          header: {
-            format: "ID",
-          },
-          width: "14%",
-          cells: {
-            className: "ra-grid-cell ra-meta-cell",
-          },
+          id: "budget",
+          header: { format: "Budget" },
+          width: "11%",
+          cells: { className: "ra-grid-cell ra-amount-cell" },
         },
         {
-          id: "date",
-          header: {
-            format: "Date",
-          },
+          id: "impressions",
+          header: { format: "Impressions" },
           width: "13%",
-          cells: {
-            className: "ra-grid-cell ra-meta-cell",
-          },
+          cells: { className: "ra-grid-cell ra-meta-cell" },
         },
         {
-          id: "amount",
-          header: {
-            format: "Amount",
-          },
-          width: "13%",
+          id: "ctr",
+          header: { format: "CTR" },
+          width: "8%",
+          cells: { className: "ra-grid-cell ra-meta-cell" },
+        },
+        {
+          id: "conversions",
+          header: { format: "Conversions" },
+          width: "12%",
+          cells: { className: "ra-grid-cell ra-meta-cell" },
+        },
+        {
+          id: "status",
+          header: { format: "Status" },
+          width: "12%",
           cells: {
-            className: "ra-grid-cell ra-amount-cell",
+            className: "ra-grid-cell",
+            formatter: function () {
+              const s = String((this as { value?: unknown }).value ?? "");
+              const isActive = s === "Active";
+              const c = isActive ? "#6DDFA0" : "#EBD95F";
+              return `<span style="background:${c}20;color:${c};border:1px solid ${c}50;border-radius:9999px;padding:2px 8px;font-size:10px;font-weight:700;">${s}</span>`;
+            },
           },
         },
       ],
       dataTable: {
         columns: {
-          user: recentActivity.map(
-            (row) =>
-              `<div class="ra-user">
-                <span class="ra-user-avatar">${row.initials}</span>
-                <span class="ra-user-copy">
-                  <span class="ra-user-name">${row.name}</span>
-                  <span class="ra-user-email">${row.email}</span>
-                </span>
-              </div>`,
-          ),
-          status: recentActivity.map((row) => row.status),
-          id: recentActivity.map((row) => row.id),
-          date: recentActivity.map((row) => row.date),
-          amount: recentActivity.map((row) => row.amount),
+          name:        campaignRows.map((r) => r.name),
+          channel:     campaignRows.map((r) => r.channel),
+          budget:      campaignRows.map((r) => r.budget),
+          impressions: campaignRows.map((r) => r.impressions),
+          ctr:         campaignRows.map((r) => r.ctr),
+          conversions: campaignRows.map((r) => r.conversions),
+          status:      campaignRows.map((r) => r.status),
         },
       },
     }),
     [],
   );
 
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div>
-      <div className="flex flex-col items-start justify-between gap-2 md:flex-row">
+      {/* ── Header ── */}
+      <div className="flex flex-col items-start justify-between gap-2 md:flex-row md:items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">Here&apos;re the details of your analysis.</p>
+          <h1 className="text-2xl font-bold tracking-tight">Marketing Dashboard</h1>
+          <p className="text-muted-foreground">Highcharts · Q4 2024 — Nov 1–21</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            <IconFilter className="mr-2 size-4" />
-            Filter By
-          </Button>
+          <Select defaultValue="30d">
+            <SelectTrigger className="w-[130px]" aria-label="Date range">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7d">Last 7 days</SelectItem>
+              <SelectItem value="30d">Last 30 days</SelectItem>
+              <SelectItem value="90d">Last 90 days</SelectItem>
+              <SelectItem value="ytd">Year to date</SelectItem>
+            </SelectContent>
+          </Select>
           <Button size="sm">
-            <IconFileDescription className="mr-2 size-4" />
+            <IconFileDescription className="mr-2 size-4" aria-hidden="true" />
             Export
           </Button>
         </div>
       </div>
 
-      <div className="mt-2 grid grid-cols-6 items-stretch gap-5 lg:grid-cols-12">
-        <div className="col-span-6 grid auto-rows-fr grid-cols-6 gap-4">
-          {statCards.map((card) => (
-            <div key={card.title} className="col-span-3">
-              <DashboardTwoStatCard card={card} />
-            </div>
-          ))}
+      <div className="mt-5 grid grid-cols-6 items-stretch gap-5 lg:grid-cols-12">
+
+        {/* ── Row 1: KPI Stat Cards (6) ── */}
+        {statCards.map((card) => (
+          <div key={card.title} className="col-span-3 lg:col-span-2">
+            <DashboardTwoStatCard card={card} />
+          </div>
+        ))}
+
+        {/* ── Row 2: Traffic Acquisition + Channel Mix ── */}
+        <div className="col-span-6 lg:col-span-8">
+          <Card className="h-full">
+            <CardHeader className="pb-2">
+              <CardTitle>Traffic Acquisition</CardTitle>
+              <CardDescription>Weekly sessions by channel — last 12 weeks</CardDescription>
+            </CardHeader>
+            <CardContent className="pb-4">
+              <DashboardHighchart options={trafficChartOptions} className="h-[280px] w-full" />
+            </CardContent>
+          </Card>
         </div>
 
-        <div className="col-span-6">
+        <div className="col-span-6 lg:col-span-4">
           <Card className="h-full">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Revenue</CardTitle>
-                <div className="mt-1 flex items-center gap-2">
-                  <span className="text-3xl font-bold">$14,324</span>
-                  <span className="rounded-xl bg-emerald-500 px-[5px] py-[2px] text-[10px] font-medium text-white">+10%</span>
-                </div>
+            <CardHeader className="pb-0">
+              <CardTitle>Channel Mix</CardTitle>
+              <CardDescription>Month to date · {(totalSessions / 1000).toFixed(0)}K sessions</CardDescription>
+            </CardHeader>
+            <CardContent className="pb-4">
+              <DashboardHighchart options={channelDonutOptions} className="h-[260px] w-full" />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* ── Row 3: SaaS Growth Funnel + Campaign Performance ── */}
+        <div className="col-span-6 lg:col-span-7">
+          <Card className="h-full">
+            <CardHeader className="pb-1">
+              <CardTitle>SaaS Growth Funnel</CardTitle>
+              <CardDescription>Developer journey — discovery to paid · Nov MTD</CardDescription>
+            </CardHeader>
+            <CardContent className="pb-3">
+              <DashboardHighchart options={funnelChartOptions} className="h-[300px] w-full" />
+
+              {/* Conversion rate badges */}
+              <div className="mt-3 flex flex-wrap gap-2">
+                {funnelConvRates.map((rate) => (
+                  <div
+                    key={rate.label}
+                    className="flex items-center gap-2 rounded-full border border-border bg-muted/50 px-3 py-1"
+                  >
+                    <span className="text-[11px] text-muted-foreground">{rate.label}</span>
+                    <span
+                      className="text-[11px] font-bold"
+                      style={{ color: rate.color }}
+                    >
+                      {rate.pct}
+                    </span>
+                  </div>
+                ))}
               </div>
-              <Select defaultValue="year">
-                <SelectTrigger className="w-[90px]">
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="col-span-6 lg:col-span-5">
+          <Card className="h-full">
+            <CardHeader className="pb-2">
+              <CardTitle>Campaign Performance</CardTitle>
+              <CardDescription>Conversions &amp; click-through rate by campaign</CardDescription>
+            </CardHeader>
+            <CardContent className="pb-4">
+              <DashboardHighchart options={campaignComboOptions} className="h-[280px] w-full" />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* ── Row 4: Active Campaigns Table ── */}
+        <div className="col-span-6 lg:col-span-12">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div>
+                <CardTitle>Active Campaigns</CardTitle>
+                <CardDescription>7 campaigns · $107,600 total budget</CardDescription>
+              </div>
+              <Select defaultValue="all">
+                <SelectTrigger className="w-[120px]" aria-label="Filter by channel">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="year">Year</SelectItem>
-                  <SelectItem value="month">Month</SelectItem>
-                  <SelectItem value="week">Week</SelectItem>
+                  <SelectItem value="all">All channels</SelectItem>
+                  <SelectItem value="active">Active only</SelectItem>
+                  <SelectItem value="paused">Paused</SelectItem>
                 </SelectContent>
               </Select>
             </CardHeader>
-            <CardContent className="pb-6">
-              <DashboardHighchart options={revenueChartOptions} className="h-[260px] w-full" />
+            <CardContent className="pt-0">
+              <HighchartsGridPro
+                options={campaignsGridOptions}
+                className="ra-activity-grid h-[310px]"
+              />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* ── Row 5: Geographic Distribution + Trial → Paid Trend ── */}
+        <div className="col-span-6 lg:col-span-4">
+          <Card className="h-full">
+            <CardHeader className="pb-0">
+              <CardTitle>Geographic Distribution</CardTitle>
+              <CardDescription>Traffic share by region</CardDescription>
+            </CardHeader>
+            <CardContent className="pb-4">
+              <DashboardHighchart options={geoDonutOptions} className="h-[260px] w-full" />
             </CardContent>
           </Card>
         </div>
 
         <div className="col-span-6 lg:col-span-8">
           <Card className="h-full">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Recent Activity</CardTitle>
-              <Select defaultValue="period">
-                <SelectTrigger className="w-[100px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="period">Period</SelectItem>
-                  <SelectItem value="day">Day</SelectItem>
-                  <SelectItem value="week">Week</SelectItem>
-                  <SelectItem value="month">Month</SelectItem>
-                </SelectContent>
-              </Select>
+            <CardHeader className="pb-2">
+              <CardTitle>Trial → Paid Conversion</CardTitle>
+              <CardDescription>12-month · signups (left axis) vs paid conversions (right axis)</CardDescription>
             </CardHeader>
-            <CardContent className="pt-0">
-              <HighchartsGridPro
-                options={recentActivityGridOptions}
-                className="ra-activity-grid h-[300px]"
-              />
+            <CardContent className="pb-4">
+              <DashboardHighchart options={conversionTrendOptions} className="h-[260px] w-full" />
             </CardContent>
-            <CardFooter className="justify-center pt-0">
-              <p className="text-center text-sm text-muted-foreground">A list of your recent activity.</p>
-            </CardFooter>
           </Card>
         </div>
 
-        <div className="col-span-6 lg:col-span-4">
-          <Card className="flex h-full flex-col">
-            <CardHeader className="items-center pb-0">
-              <CardTitle>Total Visitor - Chart</CardTitle>
-              <CardDescription>January - June 2024</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-1 items-center pb-0">
-              <DashboardHighchart options={visitorChartOptions} className="mx-auto h-[250px] w-full max-w-[280px]" />
-            </CardContent>
-            <CardFooter className="mt-auto flex-col gap-2 text-sm">
-              <div className="flex items-center gap-2 font-medium leading-none">
-                Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
-              </div>
-              <div className="leading-none text-muted-foreground">
-                Showing total visitors for the last 6 months
-              </div>
-            </CardFooter>
-          </Card>
-        </div>
       </div>
     </div>
   );

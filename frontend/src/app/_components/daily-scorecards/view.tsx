@@ -24,6 +24,8 @@ import {
   PIPELINE_SUMMARY,
   SEGMENT_DATA,
   TARGET_BENCHMARKS,
+  YTD_TARGET_BENCHMARKS,
+  TargetBenchmark,
   TREND_BY_DAY_LABELS,
   TREND_BY_DAY_VALUES,
   TREND_BY_QUARTER_LABELS,
@@ -32,6 +34,11 @@ import {
   TREND_BY_WEEK_VALUES,
   CHANNEL_SPLIT_MTD,
   CHANNEL_SPLIT_YTD,
+  CHANNEL_WATERFALL_MTD,
+  CHANNEL_WATERFALL_YTD,
+  MTD_BAR_LABELS,
+  MTD_BAR_2025,
+  MTD_BAR_2024,
   YOY_MONTHS,
   YOY_ORDERS_LAST_YEAR,
   YOY_ORDERS_THIS_YEAR,
@@ -89,17 +96,17 @@ function TogglePills<T extends string>({
 /** Coloured rule + title used to open each logical section */
 function SectionHeader({ label, accent = "#8087E8" }: { label: string; accent?: string }) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-3 pt-2">
       <div className="h-px flex-1 bg-border" />
       <span
-        className="rounded-full border px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest"
+        className="rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wide whitespace-nowrap"
         style={{
           color: accent,
-          borderColor: `${accent}40`,
-          backgroundColor: `${accent}10`,
+          borderColor: `${accent}55`,
+          backgroundColor: `${accent}18`,
         }}
       >
-        {accent === "#A3EDBA" ? "●" : "●"} {label}
+        ● {label}
       </span>
       <div className="h-px flex-1 bg-border" />
     </div>
@@ -119,6 +126,141 @@ function PeriodBadge({ label, variant }: { label: string; variant: "mtd" | "ytd"
     >
       {label}
     </span>
+  );
+}
+
+// ─── Target Scorecards ────────────────────────────────────────────────────────
+
+const SCORECARD_ACCENTS = ["#F7A85E", "#6DDFA0", "#9198F0"] as const;
+
+function scorecardStatus(pctReached: number, daysElapsed: number, totalDays: number) {
+  const pace = (daysElapsed / totalDays) * 100;
+  const ratio = pctReached / pace;
+  const diff = Math.round(Math.abs((1 - ratio) * 100));
+  if (ratio >= 1.05) return { type: "ahead" as const, diff };
+  if (ratio >= 0.92) return { type: "ontrack" as const, diff };
+  return { type: "behind" as const, diff };
+}
+
+function ScorecardStatusBadge({ status }: { status: ReturnType<typeof scorecardStatus> }) {
+  if (status.type === "ahead")
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+        ▲ +{status.diff}% ahead
+      </span>
+    );
+  if (status.type === "ontrack")
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+        ✓ On track
+      </span>
+    );
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-600 dark:text-amber-400">
+      ⚠ -{status.diff}% behind pace
+    </span>
+  );
+}
+
+function ScorecardHalf({
+  periodLabel,
+  benchmark,
+  accent,
+  daysElapsed,
+  totalDays,
+}: {
+  periodLabel: string;
+  benchmark: TargetBenchmark;
+  accent: string;
+  daysElapsed: number;
+  totalDays: number;
+}) {
+  const status = scorecardStatus(benchmark.pctReached, daysElapsed, totalDays);
+  const fillPct = Math.min(100, benchmark.pctReached);
+
+  return (
+    <div className="flex flex-1 flex-col gap-3 px-5 py-5">
+      <p
+        className="text-[11px] font-bold uppercase tracking-widest"
+        style={{ color: `${accent}aa` }}
+      >
+        {periodLabel}
+      </p>
+      <div>
+        <p className="text-[40px] font-bold leading-none tracking-tight">
+          {benchmark.pctReached.toFixed(1)}
+          <span className="text-xl font-semibold">%</span>
+        </p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          of {fmtCurrency(benchmark.amount)} target
+        </p>
+      </div>
+
+      {/* Progress bar */}
+      <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full rounded-full transition-all duration-700"
+          style={{ width: `${fillPct}%`, backgroundColor: accent }}
+        />
+      </div>
+
+      <p className="text-sm font-semibold" style={{ color: accent }}>
+        -{fmtCurrency(benchmark.revenueLeft)} remaining
+      </p>
+
+      <ScorecardStatusBadge status={status} />
+    </div>
+  );
+}
+
+function TargetScorecard({
+  title,
+  accent,
+  mtdBenchmark,
+  ytdBenchmark,
+}: {
+  title: string;
+  accent: string;
+  mtdBenchmark: TargetBenchmark;
+  ytdBenchmark: TargetBenchmark;
+}) {
+  return (
+    <Card
+      className="gap-0 overflow-hidden py-0"
+      style={{ borderTopWidth: 3, borderTopColor: accent }}
+    >
+      {/* Card label */}
+      <div className="flex items-center gap-2 px-5 pt-4 pb-1">
+        <span
+          className="rounded-full px-3 py-1 text-xs font-bold uppercase tracking-widest"
+          style={{
+            backgroundColor: `${accent}18`,
+            color: accent,
+            border: `1px solid ${accent}40`,
+          }}
+        >
+          {title}
+        </span>
+      </div>
+
+      {/* Two halves */}
+      <div className="flex divide-x divide-border">
+        <ScorecardHalf
+          periodLabel="Month to Date"
+          benchmark={mtdBenchmark}
+          accent={accent}
+          daysElapsed={20}
+          totalDays={28}
+        />
+        <ScorecardHalf
+          periodLabel="Year to Date"
+          benchmark={ytdBenchmark}
+          accent={accent}
+          daysElapsed={51}
+          totalDays={365}
+        />
+      </div>
+    </Card>
   );
 }
 
@@ -226,8 +368,171 @@ function PeriodPanel({
 
 export function DailyScorecardsView() {
   const [country, setCountry] = React.useState<Country>("All Countries");
+  const [period, setPeriod] = React.useState<"mtd" | "ytd">("mtd");
   const [yoyMetric, setYoyMetric] = React.useState<"revenue" | "orders">("revenue");
   const [trendGranularity, setTrendGranularity] = React.useState<"day" | "week" | "quarter">("day");
+
+  // ── Customer Channel Waterfall ──────────────────────────────────────────
+
+  const buildWaterfallOptions = React.useCallback(
+    (data: readonly { name: string; y: number }[]) =>
+      createBaseChartOptions({
+        chart: { type: "waterfall", animation: false, height: 300 },
+        xAxis: {
+          type: "category",
+          labels: { style: { fontSize: "11px" } },
+        },
+        yAxis: {
+          title: { text: "" },
+          labels: {
+            formatter: function () {
+              return fmtCurrency(Number(this.value));
+            },
+          },
+        },
+        tooltip: {
+          formatter: function () {
+            return `<b>${String(this.x)}</b><br/>${fmtCurrency(Number(this.y))}`;
+          },
+        },
+        legend: { enabled: false },
+        plotOptions: {
+          waterfall: {
+            borderRadius: 4,
+            borderWidth: 0,
+            lineColor: "rgba(145,152,240,0.25)",
+            dashStyle: "Dot",
+            dataLabels: {
+              enabled: true,
+              formatter: function () {
+                return fmtCurrency(Number(this.y));
+              },
+              style: {
+                fontSize: "10px",
+                fontWeight: "600",
+                textOutline: "none",
+              },
+              verticalAlign: "top",
+              y: -18,
+            },
+          },
+        },
+        series: [
+          {
+            type: "waterfall",
+            name: "Revenue",
+            upColor: chartColor(0),
+            data: [
+              ...data.map((p, i) => ({
+                name: p.name,
+                y: p.y,
+                color: chartColor(i),
+              })),
+              {
+                name: "Total",
+                isSum: true,
+                color: "#8087E8",
+                dataLabels: { y: -18 },
+              },
+            ],
+          },
+        ],
+      }),
+    [],
+  );
+
+  const channelWaterfallMtdOptions = React.useMemo(
+    () => buildWaterfallOptions(CHANNEL_WATERFALL_MTD),
+    [buildWaterfallOptions],
+  );
+
+  const channelWaterfallYtdOptions = React.useMemo(
+    () => buildWaterfallOptions(CHANNEL_WATERFALL_YTD),
+    [buildWaterfallOptions],
+  );
+
+  // ── Sales YoY bar charts ─────────────────────────────────────────────────
+
+  const buildBarOptions = React.useCallback(
+    (
+      labels: readonly string[],
+      current: readonly (number | null)[],
+      prior: readonly (number | null)[],
+      currentLabel: string,
+      priorLabel: string,
+    ) =>
+      createBaseChartOptions({
+        chart: { type: "column", animation: false, height: 256 },
+        xAxis: { categories: [...labels], labels: { style: { fontSize: "11px" } } },
+        yAxis: {
+          title: { text: "" },
+          labels: {
+            formatter: function () {
+              return fmtCurrency(Number(this.value));
+            },
+          },
+        },
+        tooltip: {
+          shared: true,
+          formatter: function () {
+            const pts = (this.points ?? []).filter((p) => p.y !== null && p.y !== undefined);
+            const lines = pts.map(
+              (p) =>
+                `<span style="color:${String(p.color)}">●</span> ${p.series.name}: <b>${fmtCurrency(Number(p.y))}</b>`,
+            );
+            return `<b>${String(this.x)}</b><br/>${lines.join("<br/>")}`;
+          },
+        },
+        legend: {
+          enabled: true,
+          align: "right",
+          verticalAlign: "top",
+          itemStyle: { fontSize: "11px", fontWeight: "600" },
+        },
+        plotOptions: {
+          column: {
+            grouping: true,
+            pointPadding: 0.06,
+            groupPadding: 0.12,
+            borderWidth: 0,
+            borderRadius: 3,
+          },
+        },
+        series: [
+          {
+            type: "column",
+            name: currentLabel,
+            data: [...current],
+            color: chartColor(1),
+          },
+          {
+            type: "column",
+            name: priorLabel,
+            data: [...prior],
+            color: "#64748b",
+            opacity: 0.55,
+          },
+        ],
+      }),
+    [],
+  );
+
+  const mtdBarOptions = React.useMemo(
+    () => buildBarOptions(MTD_BAR_LABELS, MTD_BAR_2025, MTD_BAR_2024, "2025", "2024"),
+    [buildBarOptions],
+  );
+
+  const ytdBarOptions = React.useMemo(
+    () =>
+      buildBarOptions(
+        YOY_MONTHS,
+        YOY_REVENUE_THIS_YEAR,
+        YOY_REVENUE_LAST_YEAR,
+        "2025",
+        "2024",
+      ),
+    [buildBarOptions],
+  );
 
   // ── Revenue vs Targets ──────────────────────────────────────────────────
 
@@ -799,7 +1104,7 @@ export function DailyScorecardsView() {
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-8 p-4 md:p-6">
 
       {/* ── 1. Header ─────────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -809,25 +1114,167 @@ export function DailyScorecardsView() {
             Revenue performance, orders, customers, and pipeline health
           </p>
         </div>
-        <Select value={country} onValueChange={(v) => setCountry(v as Country)}>
-          <SelectTrigger className="w-[160px] text-sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {COUNTRIES.map((c) => (
-              <SelectItem key={c} value={c}>{c}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-3">
+          <TogglePills
+            options={[
+              { label: "This Month", value: "mtd" },
+              { label: "Year to Date", value: "ytd" },
+            ]}
+            value={period}
+            onChange={setPeriod}
+          />
+          <Select value={country} onValueChange={(v) => setCountry(v as Country)}>
+            <SelectTrigger className="w-[160px] text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {COUNTRIES.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {/* ── 2. MTD | YTD period panels ────────────────────────────────────── */}
+      {/* ── 2. Target Scorecards (always show MTD + YTD side by side) ─────── */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        {TARGET_BENCHMARKS.map((mtdB, i) => (
+          <TargetScorecard
+            key={mtdB.name}
+            title={mtdB.name}
+            accent={SCORECARD_ACCENTS[i]}
+            mtdBenchmark={mtdB}
+            ytdBenchmark={YTD_TARGET_BENCHMARKS[i]}
+          />
+        ))}
+      </div>
+      {/* Legend */}
+      <div className="-mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-1">
+        {TARGET_BENCHMARKS.map((b, i) => (
+          <span key={b.name} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: SCORECARD_ACCENTS[i] }}
+            />
+            {b.name} — {fmtCurrency(b.amount)} MTD · {fmtCurrency(YTD_TARGET_BENCHMARKS[i].amount)} YTD
+          </span>
+        ))}
+      </div>
+
+      {/* ── 3. Customer Channel Revenue Waterfall ─────────────────────────── */}
+      <SectionHeader label="Customer Channel Revenue" accent="#9198F0" />
+      <div className="grid gap-4 sm:grid-cols-2">
+        {/* MTD waterfall */}
+        <Card>
+          <CardHeader className="pb-0 pt-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                Channel Breakdown
+              </CardTitle>
+              <PeriodBadge label="MTD" variant="mtd" />
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Feb 1–20, 2025 · Total{" "}
+              <strong className="text-foreground">{fmtCurrency(mtdKpis.revenueMtd)}</strong>
+            </p>
+          </CardHeader>
+          <CardContent className="p-0 pr-4 pb-4">
+            <div className="h-[300px]">
+              <DashboardHighchart options={channelWaterfallMtdOptions} />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* YTD waterfall */}
+        <Card>
+          <CardHeader className="pb-0 pt-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                Channel Breakdown
+              </CardTitle>
+              <PeriodBadge label="YTD" variant="ytd" />
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Jan 1–Feb 20, 2025 · Total{" "}
+              <strong className="text-foreground">{fmtCurrency(ytdKpis.revenueMtd)}</strong>
+            </p>
+          </CardHeader>
+          <CardContent className="p-0 pr-4 pb-4">
+            <div className="h-[300px]">
+              <DashboardHighchart options={channelWaterfallYtdOptions} />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ── Sales 2025 vs 2024 bar charts ──────────────────────────────────── */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {/* MTD: weekly within current month */}
+        <Card>
+          <CardHeader className="pb-0 pt-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                Sales vs Prior Year
+              </CardTitle>
+              <PeriodBadge label="MTD" variant="mtd" />
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Feb weekly · <span className="font-medium" style={{ color: chartColor(1) }}>2025</span>
+              {" vs "}
+              <span className="font-medium text-slate-500">2024</span>
+            </p>
+          </CardHeader>
+          <CardContent className="p-0 pr-4 pb-4">
+            <div className="h-[256px]">
+              <DashboardHighchart options={mtdBarOptions} />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* YTD: full-year monthly */}
+        <Card>
+          <CardHeader className="pb-0 pt-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                Sales vs Prior Year
+              </CardTitle>
+              <PeriodBadge label="YTD" variant="ytd" />
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Monthly · <span className="font-medium" style={{ color: chartColor(1) }}>2025</span>
+              {" vs "}
+              <span className="font-medium text-slate-500">2024</span>
+            </p>
+          </CardHeader>
+          <CardContent className="p-0 pr-4 pb-4">
+            <div className="h-[256px]">
+              <DashboardHighchart options={ytdBarOptions} />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ── 4. Active period panel ─────────────────────────────────────────── */}
+      <SectionHeader
+        label={period === "mtd" ? "Month to Date" : "Year to Date"}
+        accent={period === "mtd" ? "#8087E8" : "#6DDFA0"}
+      />
       <div className="grid gap-4 lg:grid-cols-2">
-        <PeriodPanel variant="mtd" kpis={mtdKpis} date="Feb 1–20, 2025" />
-        <PeriodPanel variant="ytd" kpis={ytdKpis} date="Jan 1–Feb 20, 2025" />
+        {period === "mtd" ? (
+          <>
+            <PeriodPanel variant="mtd" kpis={mtdKpis} date="Feb 1–20, 2025" />
+            {/* YTD at a glance — smaller, muted */}
+            <PeriodPanel variant="ytd" kpis={ytdKpis} date="Jan 1–Feb 20, 2025" />
+          </>
+        ) : (
+          <>
+            <PeriodPanel variant="ytd" kpis={ytdKpis} date="Jan 1–Feb 20, 2025" />
+            <PeriodPanel variant="mtd" kpis={mtdKpis} date="Feb 1–20, 2025" />
+          </>
+        )}
       </div>
 
-      {/* ── 3. Revenue vs Targets ─────────────────────────────────────────── */}
+      {/* ── 4. Revenue vs Targets ─────────────────────────────────────────── */}
       <SectionHeader label="Revenue vs Targets" />
       <Card>
         <CardContent className="p-0 pr-4 pt-4">
@@ -1050,18 +1497,17 @@ export function DailyScorecardsView() {
       </Card>
 
       {/* ── 13. Full Summary Table ───────────────────────────────────────── */}
+      <SectionHeader label="Full Summary Table" accent="#6DDFA0" />
       <Card className="sc-summary-card gap-0 py-0">
-        <CardContent className="px-0 pb-6 pt-6">
-          <div className="px-5">
-            <h2 className="text-[34px] font-semibold tracking-[-0.02em] text-foreground">10. Full Summary Table</h2>
-            <p className="mt-2 text-[18px] italic text-muted-foreground">
-              Full summary with colour-coded YoY badges and visual order/revenue bars
-            </p>
-          </div>
-          <div className="mt-4 px-5">
-            <div className="h-[300px]">
-              <HighchartsGridPro className="sc-summary-grid" options={summaryTableGridOptions} />
-            </div>
+        <CardHeader className="pb-2 pt-5">
+          <CardTitle className="text-base font-semibold">Segment Breakdown</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Colour-coded YoY badges and visual order/revenue bars by value segment
+          </p>
+        </CardHeader>
+        <CardContent className="px-4 pb-6 pt-0">
+          <div className="h-[300px]">
+            <HighchartsGridPro className="sc-summary-grid" options={summaryTableGridOptions} />
           </div>
         </CardContent>
       </Card>

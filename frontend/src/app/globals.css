@@ -24,11 +24,11 @@
   --border: #e2e8f0;
   --input: #e2e8f0;
   --ring: #020817;
-  --chart-1: #8087E8;
-  --chart-2: #A3EDBA;
-  --chart-3: #F19E53;
-  --chart-4: #6699A1;
-  --chart-5: #E1D369;
+  --chart-1: #9198F0;
+  --chart-2: #6DDFA0;
+  --chart-3: #F7A85E;
+  --chart-4: #7DBFCE;
+  --chart-5: #EBD95F;
   --radius: 0.6rem;
   --sidebar-background: var(--background);
   --sidebar-foreground: var(--foreground);
@@ -41,27 +41,47 @@
 }
 
 .dark {
-  --background: #020817;
-  --foreground: #f8fafc;
-  --card: #020817;
-  --card-foreground: #f8fafc;
-  --primary: #f8fafc;
+  /* Page surface — slightly deeper navy so cards can lift above it */
+  --background: #070d1a;
+  --foreground: #f1f5f9;
+
+  /* Cards sit one layer above the page — critical for depth perception */
+  --card: #0e1829;
+  --card-foreground: #f1f5f9;
+
+  /* Popovers & dropdowns sit above cards */
+  --popover: #162033;
+  --popover-foreground: #f1f5f9;
+
+  --primary: #f1f5f9;
   --primary-foreground: #0f172a;
-  --secondary: #1e293b;
-  --secondary-foreground: #f8fafc;
-  --muted: #1e293b;
+
+  /* Subtle secondary surfaces — slightly lifted from page */
+  --secondary: #172235;
+  --secondary-foreground: #f1f5f9;
+  --muted: #131f33;
+  /* Brighter secondary text — slate-400 on #070d1a gives comfortable contrast */
   --muted-foreground: #94a3b8;
-  --accent: #1e293b;
-  --accent-foreground: #f8fafc;
+
+  --accent: #172235;
+  --accent-foreground: #f1f5f9;
+
   --destructive: #7f1d1d;
-  --border: #1e293b;
-  --input: #1e293b;
+
+  /* Stronger border — now clearly differentiates cards from the page */
+  --border: #1e2d45;
+  --input: #172235;
   --ring: #cbd5e1;
-  --chart-1: #8087E8;
-  --chart-2: #A3EDBA;
-  --chart-3: #F19E53;
-  --chart-4: #6699A1;
-  --chart-5: #E1D369;
+
+  /* Chart palette — brightened for dark backgrounds; keeps hue identity */
+  --chart-1: #9198F0;   /* violet  — was #8087E8 */
+  --chart-2: #6DDFA0;   /* mint    — was #A3EDBA */
+  --chart-3: #F7A85E;   /* orange  — was #F19E53 */
+  --chart-4: #7DBFCE;   /* teal    — was #6699A1 */
+  --chart-5: #EBD95F;   /* yellow  — was #E1D369 */
+
+  /* Tell the browser this context is dark: scrollbars, inputs, selects */
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -388,32 +408,32 @@
 }
 
 /* Segment colours aligned with the chart palette (chartColor index) */
-.sc-summary-grid .sc-summary-segment-low {        /* chartColor(3) */
-  color: #6699A1;
+.sc-summary-grid .sc-summary-segment-low {        /* chartColor(3) — teal */
+  color: #7DBFCE;
 }
 .sc-summary-grid .sc-summary-segment-low .sc-summary-segment-dot {
-  background: #6699A1;
+  background: #7DBFCE;
 }
 
-.sc-summary-grid .sc-summary-segment-medium {     /* chartColor(1) */
-  color: #A3EDBA;
+.sc-summary-grid .sc-summary-segment-medium {     /* chartColor(1) — mint */
+  color: #6DDFA0;
 }
 .sc-summary-grid .sc-summary-segment-medium .sc-summary-segment-dot {
-  background: #A3EDBA;
+  background: #6DDFA0;
 }
 
-.sc-summary-grid .sc-summary-segment-high {       /* chartColor(2) */
-  color: #F19E53;
+.sc-summary-grid .sc-summary-segment-high {       /* chartColor(2) — orange */
+  color: #F7A85E;
 }
 .sc-summary-grid .sc-summary-segment-high .sc-summary-segment-dot {
-  background: #F19E53;
+  background: #F7A85E;
 }
 
-.sc-summary-grid .sc-summary-segment-enterprise { /* chartColor(0) */
-  color: #8087E8;
+.sc-summary-grid .sc-summary-segment-enterprise { /* chartColor(0) — violet */
+  color: #9198F0;
 }
 .sc-summary-grid .sc-summary-segment-enterprise .sc-summary-segment-dot {
-  background: #8087E8;
+  background: #9198F0;
 }
 
 .sc-summary-grid .sc-summary-segment-total {
@@ -459,10 +479,10 @@
 }
 
 /* Bar fills match segment dot colours */
-.sc-summary-grid .sc-summary-bar-fill-low        { background: #6699A1; }
-.sc-summary-grid .sc-summary-bar-fill-medium     { background: #A3EDBA; }
-.sc-summary-grid .sc-summary-bar-fill-high       { background: #F19E53; }
-.sc-summary-grid .sc-summary-bar-fill-enterprise { background: #8087E8; }
+.sc-summary-grid .sc-summary-bar-fill-low        { background: #7DBFCE; }
+.sc-summary-grid .sc-summary-bar-fill-medium     { background: #6DDFA0; }
+.sc-summary-grid .sc-summary-bar-fill-high       { background: #F7A85E; }
+.sc-summary-grid .sc-summary-bar-fill-enterprise { background: #9198F0; }
 
 .sc-summary-grid .sc-summary-bar-label {
   color: var(--muted-foreground);

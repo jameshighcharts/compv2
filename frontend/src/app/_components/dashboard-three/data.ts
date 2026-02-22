@@ -35,10 +35,10 @@ export const totalDesktop = budgetData.reduce((sum, item) => sum + item.desktop,
 export const totalMobile = budgetData.reduce((sum, item) => sum + item.mobile, 0);
 
 export const metricCards: MetricCard[] = [
-  { title: "Session", icon: IconClipboardData, iconColor: "text-blue-500", value: "6,132", badge: "%90", positive: true },
-  { title: "Page Views", icon: Eye, iconColor: "text-teal-500", value: "11,236", badge: "%40", positive: false },
-  { title: "Average", icon: IconFile, iconColor: "text-orange-500", value: "46", badge: "%22", positive: true },
-  { title: "Bounce Rate", icon: IconCircle, iconColor: "text-pink-500", value: "6,132", badge: "%30", positive: false },
+  { title: "Session", icon: IconClipboardData, iconColor: "text-blue-500", value: "6,132", badge: "90%", positive: true },
+  { title: "Page Views", icon: Eye, iconColor: "text-teal-500", value: "11,236", badge: "40%", positive: false },
+  { title: "Average", icon: IconFile, iconColor: "text-orange-500", value: "46", badge: "22%", positive: true },
+  { title: "Bounce Rate", icon: IconCircle, iconColor: "text-pink-500", value: "6,132", badge: "30%", positive: false },
 ];
 
 export const radarData = [

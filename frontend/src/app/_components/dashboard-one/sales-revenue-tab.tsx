@@ -6,6 +6,19 @@ import { IconArrowDownRight, IconArrowUpRight, IconInfoCircle } from "@tabler/ic
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardHighchart, chartColor, createBaseChartOptions, mergeSeriesColors } from "@/components/ui/highcharts";
 
+/** Returns true whenever the `html` element carries the `.dark` class. */
+function useIsDark(): boolean {
+  const [isDark, setIsDark] = React.useState(false);
+  React.useEffect(() => {
+    const check = () => setIsDark(document.documentElement.classList.contains("dark"));
+    check();
+    const obs = new MutationObserver(check);
+    obs.observe(document.documentElement, { attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
+  return isDark;
+}
+
 import {
   channelPartnerBarData,
   directRevenueBarData,
@@ -59,7 +72,17 @@ const buildSalesRevenueBarOptions = (
     ],
   });
 
-const buildGaugeOptions = (value: number, previous: number, label: string) => {
+const buildGaugeOptions = (
+  value: number,
+  previous: number,
+  label: string,
+  /** Current-needle colour — should contrast against the gauge arc and page bg */
+  dialColor: string,
+  /** Previous-needle colour — dimmer version of dialColor */
+  dialColorPrev: string,
+  /** Base-zone track colour — the "below target" segment of the arc */
+  trackColor: string,
+) => {
   return {
     chart: {
       type: "gauge",
@@ -100,10 +123,11 @@ const buildGaugeOptions = (value: number, previous: number, label: string) => {
         style: { fontSize: "13px", fontWeight: "600", color: "var(--foreground)", textOutline: "none" },
       },
       plotBands: [
-        { from: 0, to: srGaugeTargets.base, color: "#e2e8f0", thickness: 23 },
-        { from: srGaugeTargets.base, to: srGaugeTargets.budget, color: "#F19E53", thickness: 23 },
-        { from: srGaugeTargets.budget, to: srGaugeTargets.high, color: "#A3EDBA", thickness: 23 },
-        { from: srGaugeTargets.high, to: srGaugeTargets.max, color: "#8087E8", thickness: 23 },
+        // Base zone: use a theme-aware track colour (light grey on light / subtle navy on dark)
+        { from: 0, to: srGaugeTargets.base, color: trackColor, thickness: 23 },
+        { from: srGaugeTargets.base, to: srGaugeTargets.budget, color: "#F7A85E", thickness: 23 },
+        { from: srGaugeTargets.budget, to: srGaugeTargets.high, color: "#6DDFA0", thickness: 23 },
+        { from: srGaugeTargets.high, to: srGaugeTargets.max, color: "#9198F0", thickness: 23 },
       ],
     },
     series: [
@@ -112,15 +136,15 @@ const buildGaugeOptions = (value: number, previous: number, label: string) => {
         name: "Previous",
         data: [previous],
         dial: {
-          radius: "80%",
-          baseWidth: 4,
+          radius: "78%",
+          baseWidth: 3,
           baseLength: "0%",
           rearLength: "0%",
-          backgroundColor: "rgba(100,116,139,0.3)",
-          borderColor: "rgba(100,116,139,0.3)",
-          borderWidth: 1,
+          backgroundColor: dialColorPrev,
+          borderColor: dialColorPrev,
+          borderWidth: 0,
         },
-        pivot: { radius: 4, backgroundColor: "rgba(100,116,139,0.3)" },
+        pivot: { radius: 4, backgroundColor: dialColorPrev },
         dataLabels: { enabled: false },
       },
       {
@@ -132,11 +156,11 @@ const buildGaugeOptions = (value: number, previous: number, label: string) => {
           baseWidth: 6,
           baseLength: "0%",
           rearLength: "0%",
-          backgroundColor: "#475569",
-          borderColor: "#475569",
+          backgroundColor: dialColor,
+          borderColor: dialColor,
           borderWidth: 0,
         },
-        pivot: { radius: 5, backgroundColor: "#475569" },
+        pivot: { radius: 5, backgroundColor: dialColor },
         dataLabels: {
           enabled: true,
           y: 10,
@@ -153,6 +177,14 @@ const buildGaugeOptions = (value: number, previous: number, label: string) => {
 };
 
 export function DashboardSalesRevenueTab() {
+  const isDark = useIsDark();
+
+  // Needle colours — bright on dark (visible against dark bg), dark on light (visible against white)
+  const dialColor     = isDark ? "#e2e8f0" : "#334155"; // current needle
+  const dialColorPrev = isDark ? "rgba(226,232,240,0.35)" : "rgba(51,65,85,0.3)"; // previous needle (dimmer)
+  // Base arc track — muted grey on light, dark-navy on dark
+  const trackColor    = isDark ? "#1e2d45" : "#e2e8f0";
+
   const licenseOwnerOpts = React.useMemo(
     () =>
       buildSalesRevenueBarOptions(licenseOwnersBarData.series, [
@@ -196,13 +228,13 @@ export function DashboardSalesRevenueTab() {
   );
 
   const srGauge0Opts = React.useMemo(
-    () => buildGaugeOptions(srGaugeItems[0].value, srGaugeItems[0].previous, srGaugeItems[0].label),
-    [],
+    () => buildGaugeOptions(srGaugeItems[0].value, srGaugeItems[0].previous, srGaugeItems[0].label, dialColor, dialColorPrev, trackColor),
+    [dialColor, dialColorPrev, trackColor],
   );
 
   const srGauge1Opts = React.useMemo(
-    () => buildGaugeOptions(srGaugeItems[1].value, srGaugeItems[1].previous, srGaugeItems[1].label),
-    [],
+    () => buildGaugeOptions(srGaugeItems[1].value, srGaugeItems[1].previous, srGaugeItems[1].label, dialColor, dialColorPrev, trackColor),
+    [dialColor, dialColorPrev, trackColor],
   );
 
   return (
@@ -225,7 +257,7 @@ export function DashboardSalesRevenueTab() {
                   <span className="text-sm text-muted-foreground">{kpi.change}</span>
                 </div>
               </div>
-              <IconInfoCircle className="size-4 shrink-0 text-muted-foreground" />
+              <IconInfoCircle className="size-4 shrink-0 text-muted-foreground" aria-label={`More info about ${kpi.title}`} />
             </CardContent>
           </Card>
         ))}

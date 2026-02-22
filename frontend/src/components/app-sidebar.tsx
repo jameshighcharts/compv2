@@ -31,6 +31,8 @@ import { navGeneral, navOther, navPages } from "@/components/sidebar/nav-data"
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
+  const visiblePages = navPages.filter((item) => !item.hidden)
+  const visibleOther = navOther.filter((item) => !item.hidden)
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -84,8 +86,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
       <SidebarContent>
         <SidebarNavGroup label="General" items={navGeneral} pathname={pathname} />
-        <SidebarNavGroup label="Pages" items={navPages} pathname={pathname} />
-        <SidebarNavGroup label="Other" items={navOther} pathname={pathname} />
+        {visiblePages.length > 0 ? (
+          <SidebarNavGroup label="Pages" items={visiblePages} pathname={pathname} />
+        ) : null}
+        {visibleOther.length > 0 ? (
+          <SidebarNavGroup label="Other" items={visibleOther} pathname={pathname} />
+        ) : null}
       </SidebarContent>
 
       <SidebarFooter className="flex flex-col gap-2 p-2">

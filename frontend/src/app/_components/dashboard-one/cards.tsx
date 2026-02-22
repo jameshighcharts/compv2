@@ -21,7 +21,7 @@ export function ArrKpiCard({
     <Card className="h-full w-full gap-0 py-0">
       <CardHeader className="flex flex-row items-center justify-between p-5 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <IconInfoCircle className="size-4 text-muted-foreground" />
+        <IconInfoCircle className="size-4 text-muted-foreground" aria-label={`More info about ${title}`} />
       </CardHeader>
       <CardContent className="p-5 pt-2">
         <div className="text-3xl font-bold">{value}</div>
@@ -53,7 +53,7 @@ export function AnalyticsMetricCard({
     <Card className="h-full w-full gap-0 bg-muted py-0">
       <CardHeader className="flex flex-row items-center justify-between px-4 pb-2 pt-2">
         <CardTitle className="flex items-center gap-2 text-sm font-medium">{title}</CardTitle>
-        <IconInfoCircle className="size-4 scale-90 text-muted-foreground" />
+        <IconInfoCircle className="size-4 scale-90 text-muted-foreground" aria-label={`More info about ${title}`} />
       </CardHeader>
       <CardContent className="px-4 pb-3 pt-0">
         <div className="text-lg font-bold sm:text-2xl">

@@ -113,6 +113,31 @@ export const TARGET_BENCHMARKS: TargetBenchmark[] = [
   },
 ];
 
+// YTD versions of the above benchmarks (annual goals, actual = $1.204M YTD through Feb 20)
+export const YTD_TARGET_BENCHMARKS: TargetBenchmark[] = [
+  {
+    name: "Beat Last Year",
+    amount: 6_200_000,
+    revenueLeft: 4_995_250,
+    pctReached: 19.4,
+    pctOnTrack: 138.9,
+  },
+  {
+    name: "Budget",
+    amount: 7_200_000,
+    revenueLeft: 5_995_250,
+    pctReached: 16.7,
+    pctOnTrack: 119.5,
+  },
+  {
+    name: "Bubbles!",
+    amount: 9_000_000,
+    revenueLeft: 7_795_250,
+    pctReached: 13.4,
+    pctOnTrack: 95.9,
+  },
+];
+
 // ─── Revenue vs Targets Chart Data ────────────────────────────────────────────
 
 export const DAILY_REVENUE_DAYS = Array.from({ length: 20 }, (_, i) => `Feb ${i + 1}`);
@@ -170,6 +195,35 @@ export const YOY_ORDERS_LAST_YEAR: (number | null)[] = [
 
 export const CHANNEL_SPLIT_MTD = { direct: 298_000, channel: 184_300 };
 export const CHANNEL_SPLIT_YTD = { direct: 742_000, channel: 462_750 };
+
+// ─── Customer Channel Revenue Waterfall ───────────────────────────────────────
+// Each array sums to the period total (MTD = $482,300 · YTD = $1,204,750)
+
+export const CHANNEL_WATERFALL_MTD = [
+  { name: "Direct Sales",     y: 185_400 },
+  { name: "Channel Partners", y: 112_900 },
+  { name: "Online",           y: 87_200  },
+  { name: "ADV-S",            y: 61_100  },
+  { name: "ADV+",             y: 35_700  },
+] as const;
+
+export const CHANNEL_WATERFALL_YTD = [
+  { name: "Direct Sales",     y: 462_000 },
+  { name: "Channel Partners", y: 280_750 },
+  { name: "Online",           y: 218_500 },
+  { name: "ADV-S",            y: 152_300 },
+  { name: "ADV+",             y: 91_200  },
+] as const;
+
+// ─── Sales YoY Bar Charts (2025 current · 2024 prior) ────────────────────────
+
+// MTD: weekly buckets within Feb (derived from TREND_BY_DAY_VALUES)
+export const MTD_BAR_LABELS = ["Feb 1–7", "Feb 8–14", "Feb 15–20"];
+export const MTD_BAR_2025   = [185_200, 205_600, 91_500];
+export const MTD_BAR_2024   = [102_400, 113_800, 88_600];
+
+// YTD: full-year monthly — reuse YOY_REVENUE_THIS_YEAR / YOY_REVENUE_LAST_YEAR
+// (null entries in THIS_YEAR for Mar-Dec = no bar rendered for future months)
 
 // ─── Value Segment (stacked column, 12 months) ────────────────────────────────
 
