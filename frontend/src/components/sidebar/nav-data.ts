@@ -33,6 +33,7 @@ export const navGeneral: SidebarNavItem[] = [
     subItems: [
       { title: "Sales", href: "/" },
       { title: "Marketing", href: "/dashboard-2" },
+      { title: "ARR Template", href: "/vikingsaas" },
       { title: "Dashboard 3", href: "/dashboard-3" },
     ],
   },
