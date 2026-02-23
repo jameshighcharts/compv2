@@ -42,6 +42,15 @@ export function HCARRView() {
     setSelectedHex((prev) => (prev === id ? null : id));
   }, []);
 
+  const closePanel = React.useCallback(() => setSelectedHex(null), []);
+
+  // Close on Escape key
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") closePanel(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [closePanel]);
+
   const hasPanel = selectedHex != null && !!HEX_TO_PANEL[selectedHex];
 
   return (
@@ -107,12 +116,17 @@ export function HCARRView() {
           </CardContent>
         </Card>
 
-        {/* ── Detail panel — appears below the honeycomb when a hex is clicked ── */}
+        {/* ── Detail panel — fixed modal overlay ───────────────────────────── */}
         {hasPanel && (
-          <DetailPanel
-            hexId={selectedHex}
-            onClose={() => setSelectedHex(null)}
-          />
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(2px)" }}
+            onClick={(e) => { if (e.target === e.currentTarget) closePanel(); }}
+          >
+            <div className="w-full max-w-5xl max-h-[88vh] overflow-y-auto rounded-xl shadow-2xl">
+              <DetailPanel hexId={selectedHex} onClose={closePanel} />
+            </div>
+          </div>
         )}
 
         {/* ── KPI highlight row ────────────────────────────────────────────────── */}
